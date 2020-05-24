@@ -1,0 +1,17 @@
+{
+  "name": "lirisi",
+  "version": "1.0.0",
+  "description": "Linkable Ring Signature Library Wrapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Zdeněk Böhm <zdenek.bohm@nic.cz>",
+  "license": "ISC",
+  "dependencies": {
+    "ffi": "^2.3.0",
+    "ref": "^1.3.5",
+    "ref-array": "^1.2.0",
+    "ref-struct": "^1.1.0"
+  }
+}
