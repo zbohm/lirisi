@@ -1,4 +1,8 @@
 language: go
 
+install:
+  - go get github.com/mattn/goveralls
+
 script:
-  - go test -v ring/*
+  - go test -v -covermode=count -coverprofile=coverage.out ring/*
+  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci

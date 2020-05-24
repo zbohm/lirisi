@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/zbohm/lirisi.svg?branch=master)](https://travis-ci.org/zbohm/lirisi)
-[![Coverage](https://gocover.io/_badge/github.com/zbohm/lirisi?1)](https://gocover.io/github.com/zbohm/lirisi/ring)
+[![Coverage Status](https://coveralls.io/repos/github/zbohm/lirisi/badge.svg?branch=master)](https://coveralls.io/github/zbohm/lirisi?branch=master)
 [![Report Card](http://goreportcard.com/badge/zbohm/lirisi)](http://goreportcard.com/report/zbohm/lirisi)
 [![GoDoc](https://godoc.org/github.com/zbohm/lirisi?status.svg)](https://godoc.org/github.com/zbohm/lirisi)
 
@@ -27,7 +27,46 @@ It uses functions from the project of cryptocurrency [go-ethereum](https://githu
 
 ### Source taken over
 
-The code of main functions `Sign` and `Verify` was taken from the project
-[ring-go](https://github.com/noot/ring-go). This implementation is based on
-"Ring Confidential Transactions" proposed for cryptocurrency Monero:
+The code of main functions [Sign](https://github.com/zbohm/lirisi/blob/master/ring/signature.go#L69) and [VerifySign](https://github.com/zbohm/lirisi/blob/master/ring/signature.go#L216) was taken from the project [ring-go](https://github.com/noot/ring-go). This implementation is based on "Ring Confidential Transactions" proposed for cryptocurrency Monero:
 https://eprint.iacr.org/2015/1098.pdf.
+
+### Install
+
+First install [Go](https://golang.org/dl/) if you do not have it in the OS.
+Install the application with the command:
+
+```
+go get github.com/zbohm/lirisi
+```
+
+
+### Simple console client
+
+This project is primarily a library, but after installation you have a simple client at your disposal. Enter the command `lirisi`:
+
+```
+Usage:
+  lirisi [params] COMMAND
+
+Commands:
+  create-private-key
+
+Examples:
+  lirisi create-private-key > private-key.hex
+  lirisi --output=private-key.hex create-private-key
+```
+
+
+### Library
+
+TODO: Library usage.
+
+
+### Wrappers
+
+TODO: Description of wrappers.
+
+
+### License
+
+See [LICENSE](/LICENSE).
