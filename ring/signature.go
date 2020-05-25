@@ -87,7 +87,7 @@ func Sign(message []byte, ring PublicKeysList, privkey *ecdsa.PrivateKey, s int)
 	}
 
 	// check that key at index s is indeed the signer
-	if ring[s] != pubkey {
+	if ring[s].X.Cmp(pubkey.X) != 0 || ring[s].Y.Cmp(pubkey.Y) != 0 {
 		return nil, errors.New("secret index in ring is not signer")
 	}
 

@@ -32,11 +32,10 @@ https://eprint.iacr.org/2015/1098.pdf.
 
 ### Install
 
-First install [Go](https://golang.org/dl/) if you do not have it in the OS.
-Install the application with the command:
+First install [Go](https://golang.org/dl/) if you do not have it in the OS. Then, install the library with the command:
 
 ```
-go get github.com/zbohm/lirisi
+$ go get github.com/zbohm/lirisi
 ```
 
 
@@ -50,16 +49,196 @@ Usage:
 
 Commands:
   create-private-key
+  extract-public-key
+  create-testing-ring
+  sign
+  verify
 
 Examples:
-  lirisi create-private-key > private-key.hex
-  lirisi --output=private-key.hex create-private-key
+  ...
 ```
+
+This set of commands is sufficient to test the library. We will describe an example of use. First we will create a private key:
+
+```
+$ lirisi create-private-key > private-key.hex
+```
+
+Private key is only a number. This number is stored in the file in the printable [hexadecimal](https://en.wikipedia.org/wiki/Hexadecimal) format:
+
+```
+$ cat private-key.hex
+3a99d102db5089355bb6437be27519e6152e2ae9375c58764d47a9156be21684
+```
+
+You must keep the private key secret in the real usage. But now we're just testing. After creating the private key, you can extract the public key from it:
+
+```
+$ lirisi --private=private-key.hex extract-public-key > public.b64
+```
+
+The public key, unlike the private one, must be published.
+It is also a number. It is encoded to [base64](https://en.wikipedia.org/wiki/Base64):
+
+```
+$ cat public.b64
+BFVxqw7II6TnRYVVfDq54qkI8LYYFdHFPBjkEpAHwn373yrmm+PWAkCTpQSWhSnA8C9gHcQ45dOWfiRCCJp/RIY=
+```
+
+Now you own private and public key. But to test a ring signature, you need the public keys of other signers. You can generate fake public keys for testing purposes. Then you attach your public key to them. For example you create nine fake keys:
+
+```
+$ lirisi --size=9 create-testing-ring > ring.lst
+```
+
+Each key is on one line, each encoded in base64:
+
+```
+$ cat ring.lst
+BCPs3LdNr9TH/PVxt4HjG6Sl6CR5AEGjLr2gzPvmn+k6vjY7wV0aNMUiVo70eLYUDH2gDga/F1FmZs+icOatboI=
+BKEVjH4ekVsyBDTTEgLtt2KldcRrkZhQm3cmVvQ4Kb+TAhLloPxd+ONDs6KirBxM3rEyjUXn5j79Hzdj8wLOluo=
+BEKmid82WGWyRa4f06s17BkZpaWZXoUAWqT5k4H8Pb4TPSuKm4N1lMvZrdHJjnoByPOUYj0z5l8RQR8gHUqhiDg=
+BH5eFm+b49MMkYQ7V3B5PZQCExaDIy5T8eDgSxxYTCS8vmOh3EOYI2CSkN+xz8FytsVzFWKvsTTof0wSNiV0PRw=
+BNDu2sbpdZl15vptUs8k8EHLeLEsJw71AG3oIO/nCcGV5h7pSFqO09L5AkDXdm6lQnE1Ye7Zvpd3Jil4lNsw+GM=
+BJZxm4C0yzE9jMpcaeYPddIFVz/waiNHvW+cbFNE3TnLULUv1j0iuAGhAoNQwsEAOhCsLl1XRIb66HwZfQNELn0=
+BKlVi0RvpCkA+0ezOObfNBVWwCKCPPJOnnevF1U5Rg9rFUhmFjJaqL3L0Uz2t++gFKDHtBgzEYtSv77AdH4JaZk=
+BElydk1Q+YeyR+DNmAfwMn8mK9rQLxoBNxTjpFrhf+5vGOof9dduGJ5TxIdq6Isg5lcjJ8G13bKgWPggA16tegs=
+BLqRJf4RE38u8bO7Pmo24WYJ2lJaTBEnqmiRShYrcDvskx9dAOTS8PoCBnOjdhhSUTBbe7oxZV31r5Vph0hR4Tc=
+```
+
+Now attach your own public key to them:
+
+```
+$ cat public.b64 >> ring.lst
+```
+
+So you have a set of public keys ready to sign. Your public key is at the bottom of the list, but can be anywhere in it. We can shuffle the list:
+
+```
+$ shuf ring.lst > ring-of-public.keys
+$ cat ring-of-public.keys
+BCPs3LdNr9TH/PVxt4HjG6Sl6CR5AEGjLr2gzPvmn+k6vjY7wV0aNMUiVo70eLYUDH2gDga/F1FmZs+icOatboI=
+BH5eFm+b49MMkYQ7V3B5PZQCExaDIy5T8eDgSxxYTCS8vmOh3EOYI2CSkN+xz8FytsVzFWKvsTTof0wSNiV0PRw=
+BNDu2sbpdZl15vptUs8k8EHLeLEsJw71AG3oIO/nCcGV5h7pSFqO09L5AkDXdm6lQnE1Ye7Zvpd3Jil4lNsw+GM=
+BKEVjH4ekVsyBDTTEgLtt2KldcRrkZhQm3cmVvQ4Kb+TAhLloPxd+ONDs6KirBxM3rEyjUXn5j79Hzdj8wLOluo=
+BFVxqw7II6TnRYVVfDq54qkI8LYYFdHFPBjkEpAHwn373yrmm+PWAkCTpQSWhSnA8C9gHcQ45dOWfiRCCJp/RIY=
+BJZxm4C0yzE9jMpcaeYPddIFVz/waiNHvW+cbFNE3TnLULUv1j0iuAGhAoNQwsEAOhCsLl1XRIb66HwZfQNELn0=
+BLqRJf4RE38u8bO7Pmo24WYJ2lJaTBEnqmiRShYrcDvskx9dAOTS8PoCBnOjdhhSUTBbe7oxZV31r5Vph0hR4Tc=
+BElydk1Q+YeyR+DNmAfwMn8mK9rQLxoBNxTjpFrhf+5vGOof9dduGJ5TxIdq6Isg5lcjJ8G13bKgWPggA16tegs=
+BEKmid82WGWyRa4f06s17BkZpaWZXoUAWqT5k4H8Pb4TPSuKm4N1lMvZrdHJjnoByPOUYj0z5l8RQR8gHUqhiDg=
+BKlVi0RvpCkA+0ezOObfNBVWwCKCPPJOnnevF1U5Rg9rFUhmFjJaqL3L0Uz2t++gFKDHtBgzEYtSv77AdH4JaZk=
+```
+
+Now you have a list of ten public keys in a random order. Caution! Once this list is used for signature, its order must not change! Otherwise, the signature cannot be verified.
+Finally you make a ring signature:
+
+```
+$ lirisi --message='Hello world!' --ring=ring-of-public.keys --private=private-key.hex sign > signature.pem
+```
+
+The signature is saved in the format [PEM](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail):
+
+```
+$ cat signature.pem
+-----BEGIN RING SIGNATURE-----
+KeyImage: Aeih2pvFV4RR1m9eCAasWHT4IixKfQ+AIf0v+Op8sfHjc1C8jO4fpnu/ngkFnrF8zCKMzdBHwGZyBXqelDUWDw==
+
+QklJQm9BSG9vZHFieFZlRVVkWnZYZ2dHckZoMCtDSXNTbjBQZ0NIOUwvanFmTEh4
+NDNOUXZJenVINlo3djU0SkJaNnhmTXdpak0zUVI4Qm1jZ1Y2bnBRMUZnKzZTdGI4
+N0U1REpxbDBWcnN5WmRXSnFrdHVQeVVLUVltTzJZdDVQOHpIZHIrZkxJaVFXejlW
+MmNRYzVjSzRMKzBLVGRFMzBSNis2Y1pSQ2JHR0tMUVNCL0QrZ1BQcUhESlNjeHpv
+dm5PbEE4OHh5eEthVTBxNmhScDVHR2UzazZtQWRXdWI0dnU2azJ0K2s3SlU0S1FO
+YUl1V1luTU1hQWJYaG8xMzFXbGNYZ2s4eTdqY2t1Rjl6QTRpYWlpbWRzMjZpUWJN
+WlpFY25mQms4ejVQV3l3YVJWRXU5NGltMDNUQjIwNEQzazN6dUprQlBtdmpyeW0x
+M1lYVWZoOFdHOElYenZwQ2JKdm5SMHZyUEFId0dxNlJiNFZrV1AyOVVSek1NbUxC
+MUVFZjdjKzNlNzdWMWVZQUF3eWFJRmtpenhxRDJwdS9ldXRLNHB0WEc1WkU2SFhE
+WU1qVkVBOUdsYnpyQVhKbTM0RDZmU295QkZPSHNUNWcrQnpqUUgwNUZDSHpaWitL
+bDRoY1pvOGwzWnBpNlRJWGxaMmwrUHRBdlZPb3Ivb016cm4wV0laUTlDMzlXK2JP
+OE92bVcwMWgwZ1hIaExBL2lHdGZoTFdoSDE3bVd0aUU=
+-----END RING SIGNATURE-----
+```
+
+The signature contains the so-called value "Key Image". This is the unique identifier of your private key. Each signature you create with your private key contains this identifier.
+The verifier recognizes the duplicate signature based on this identifier if you create more than one. Nevertheless, it is not possible to find out from the signature which of the signers, to whom the public keys belong, who created the signature. The signatory can only verify the validity of the signature:
+
+```
+$ lirisi --message='Hello world!' --ring=ring-of-public.keys --signature=signature.pem verify
+SUCCESS
+```
+
+If the verifier uses another message or a different key list, the signature is not valid:
+
+```
+$ lirisi --message='Hello folks!' --ring=ring-of-public.keys --signature=signature.pem verify
+2020/05/25 18:34:22 ERROR
+$ lirisi --message='Hello world!' --ring=ring.lst --signature=signature.pem verify
+2020/05/25 18:34:41 ERROR
+```
+
+Exit status of `SUCCESS` is `0`. Exit status of `ERROR` is `1`. So, you can use it in the [shell scripts](https://en.wikipedia.org/wiki/Shell_script).
 
 
 ### Library
 
-TODO: Library usage.
+Library is written in lang [Go](https://golang.org/). The use of the library is as follows:
+
+```go
+package main
+
+import (
+	"crypto/ecdsa"
+	"log"
+
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/zbohm/lirisi/ring"
+)
+
+// Auxiliary function for creating fake public keys.
+func createPublicKeyList(size int) ring.PublicKeysList {
+	ring := make(ring.PublicKeysList, size)
+	for i := 0; i < size; i++ {
+		privkey, err := crypto.GenerateKey()
+		if err != nil {
+			panic(err)
+		}
+		ring[i] = privkey.Public().(*ecdsa.PublicKey)
+	}
+	return ring
+}
+
+func main() {
+	// Create your private key.
+	privKey, err := crypto.GenerateKey()
+	if err != nil {
+		panic(err)
+	}
+
+	// Extract public key from your private.
+	pubKey := privKey.Public().(*ecdsa.PublicKey)
+
+	// Create a list of fake public keys for testing signature.
+	pubKeysRing := createPublicKeyList(9)
+	// Append your own public key.
+	pubKeysRing = append(pubKeysRing, pubKey)
+
+	// Define message to sign.
+	message := []byte("Hello world!")
+
+	// Create signature.
+	sign, err := ring.CreateSign(message, pubKeysRing, privKey)
+	if err != nil {
+		panic(err)
+	}
+
+	// Verify signature.
+	result := ring.VerifySign(sign, message, pubKeysRing)
+	if result {
+		log.Println("SUCCESS")
+	} else {
+		log.Fatalln("ERROR")
+	}
+}
+```
 
 
 ### Wrappers
