@@ -1,9 +1,4 @@
 language: go
 
-before_script:
-  - go get golang.org/x/tools/cmd/cover
-  - go get github.com/mattn/goveralls
-
 script:
-  - go test -v -covermode=count -coverprofile=coverage.out ring/*
-  # - goveralls -coverprofile=coverage.out -service=travis-ci
+  - go test -v ring/*
