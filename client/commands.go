@@ -68,7 +68,6 @@ func CreateTestingRing(output string, size int) {
 			if _, err = file.Write(append([]byte(data), '\n')); err != nil {
 				log.Fatal(err)
 			}
-
 		}
 	}
 	if output != "" {

@@ -178,7 +178,7 @@ $ lirisi --message='Hello world!' --ring=ring.lst --signature=signature.pem veri
 Exit status of `SUCCESS` is `0`. Exit status of `ERROR` is `1`. So, you can use it in the [shell scripts](https://en.wikipedia.org/wiki/Shell_script).
 
 
-### Library
+## Library
 
 Library is written in lang [Go](https://golang.org/). The use of the library is as follows:
 
@@ -241,10 +241,284 @@ func main() {
 ```
 
 
-### Wrappers
+### Library for other languages
 
-TODO: Description of wrappers.
+Library [lib/lirisilib.go](https://github.com/zbohm/lirisi/blob/master/lib/lirisilib.go) is designated for calling functions from other languages. This project already contains prepared wrappers for [Python](https://www.python.org/) (>=3.5) and [Node.js](https://nodejs.org/) languages.
 
+First you need to compile the library with a switch `-buildmode=c-shared` to get the shared object binary:
+
+```
+$ go build -o wrappers/lirisilib.so -buildmode=c-shared lib/lirisilib.go
+```
+
+#### Python (>= 3.5)
+
+Wrapper for python is ready in subfolder `wrappers/python/lirisi/`.
+Before usage, you have to make symlink to binary:
+
+```
+$ ln -s ../../lirisilib.so wrappers/python/lirisi/lirisilib.so
+```
+
+Now you can run example script [wrappers/python/example.py](https://github.com/zbohm/lirisi/blob/master/wrappers/python/example.py):
+
+```
+$ python wrappers/python/example.py
+```
+
+The script demonstrates how the library is used.
+
+```python
+import random
+
+from lirisi import (CreatePrivateKey, CreateRingOfPublicKeys, CreateSignature,
+                    GetPubKeyBytesSize, ExtractPublicKey, PEMtoSign, SignToPEM,
+                    ToBase64, ToHex, VerifySignature)
+
+
+# ---------------------------------------
+# Create your private key.
+
+privateKey = CreatePrivateKey()
+print("Your private key:")
+print(ToHex(privateKey).decode())
+# Output:
+# Your private key:
+# 74aa6a01921f598a384b7c3896e9cf6264c207b1b8c045042b7ea58eef6f65b6
+
+# ---------------------------------------
+# Extract public key.
+
+publicKey = ExtractPublicKey(privateKey)
+print("\nYour public key:")
+print(ToBase64(publicKey).decode())
+# Output:
+# Your public key:
+# BLP66/E9HNhdao1p/7/Aw6V+8BLB0fiKRPL4MR/vJV+nEHdquzXpWThL+Hhpuqel/7R6HpuUEfIHoiNn4clmVB8=
+
+# ---------------------------------------
+# Create the ring of fake public keys.
+
+pubList = []
+ring = CreateRingOfPublicKeys(9)
+
+# Append your public key.
+ring += publicKey
+
+# Randomly shuffle list of public keys.
+size = GetPubKeyBytesSize()
+ringPubs = []
+for pos in range(int(len(ring) / size)):
+    i = pos * size
+    ringPubs.append(ring[i:i+size])
+random.shuffle(ringPubs)
+
+# Concat shuffled keys.
+ringPubKeys = []
+for chunk in ringPubs:
+    ringPubKeys.extend(chunk)
+
+# Prepare public keys for save.
+pubList = []
+for chunk in ringPubs:
+    pubList.append(ToBase64(chunk).decode())
+
+print("\nRing of public keys:")
+print('\n'.join(pubList))
+# Output:
+# Ring of public keys:
+# BECA9qR+T+bePvJXVVYUA9GLYWfQ799/5EwlN6DH+VygPAZ3JtHxCPWpO3VdA9DALuids39Mb3/d1JYubU1cxg8=
+# BNoLhSi/zHveaI+fHSSGVjUwb6PInRIm7GO1k4hWkkXo9wHtpTwks+yzN7ZZzElTpqBUtfIMM1UtAdhlhQVUJ+4=
+# BJGTB+5MlE84LrQPDPr+7zVlGlnsF26QJkYKej4A3VFq8ilx5ZV1Gy4ZEM/F6Tn5LrzJ5Lw2I51eXOWGPu2AHbI=
+# BKjS6IXUBJ2wIDKxxhkKXfhBCUSCQB37wHjZK0WXQUHTnZCxCQqtggpRAlPkfXVjFBMTJZkTniTFDI/293A3yBk=
+# BB5dsoqdrTdqANzp7MRSZrhbLXF3V5AcIzfmy3/HaKSmGVzdpDw3dUUTWjz5z2ZKI/pWAZV0KJBveMV757Uxa7Q=
+# BGBtFDAteGv8atveX+0pn86cQXyCakn2pXlbszUup51wwrTH57DbzjlYfaowH4lk6++TnAaLpJNCDKI4SH67A/g=
+# BLP66/E9HNhdao1p/7/Aw6V+8BLB0fiKRPL4MR/vJV+nEHdquzXpWThL+Hhpuqel/7R6HpuUEfIHoiNn4clmVB8=
+# BIplYHkY1EqeTCmsoieGiNVc2wBTVPcQSmb/tGVRg4fjy0ZClWPzdaXW2N2wHI4vVj453RpdG2+QzZmjTuaaDNk=
+# BIBjSmlHDqmfLuI9AMw6+yUg+ms0ctRc0u35tadiDzIT0jKDotTLXm2JTdpiKDzoJJDY0Zw/z3D6Jgx/UVCMgwE=
+# BPOnZeQoVH/nvDsL4I/NXUtAbabiGbh6k3atTpMyxgmXQWTNc4TQKiFGvbh3E0JzQqzjHV3n+UxGbr7oTio3HFs=
+
+
+# ---------------------------------------
+# Prepare message to sign.
+message = [ord(c) for c in "Hello world!"]
+
+# ---------------------------------------
+# Make signature.
+sign = CreateSignature(message, ringPubKeys, privateKey)
+pemBytes = SignToPEM(sign)
+print("\nSignature in PEM:")
+print("".join([chr(c) for c in pemBytes]))
+# Output:
+# Signature in PEM:
+# -----BEGIN RING SIGNATURE-----
+# KeyImage: n3eMbqe1K+ngj0eKJ2+1so3uwwEIaie7HPCUKLc0/jutSM14cdqpRTZqvrgLw1Mfh8J0ylvqJI3DI52G8SmkpQ==
+
+# QklJQm9KOTNqRzZudFN2cDRJOUhpaWR2dGJLTjdzTUJDR29udXh6d2xDaTNOUDQ3
+# clVqTmVISGFxVVUyYXI2NEM4TlRINGZDZE1wYjZpU053eU9kaHZFcHBLV0xrTVR5
+# RXIzRkhiNVVkbnkxM3Y4NkEyZE5LU1hna282RDhMYXNxTExNRHBOaG1kZTdzT2Rs
+# VHo1M1E3eXNhMUFZeUc4SENQUmsreWR0YldYSmRINFdCMjlMdEhpazc2My90WjJW
+# Y0NZVUgvMmh2NnZFL0tlSzhOdHIybFZnMkcrOTExWHdLd3ZSZUFNdkppOEo0dGJB
+# V1l2NXhYallOZVZuN2lZc24zU1ZMYU5RNmFZcHppcjRDSkpXUFNHa3dIMkpXeHp1
+# Q3NPTlNlclo5R0JqdkdNdlZZYTNXSnNhdHpESWR4QjlKQ0tQUHlzSFJTWkZUam9a
+# djBia1JldlBGSGwzbExuVUZ3akRVMGlwTGVBTm1RVnNwR2svaW5ZdUJyTFpFQVQr
+# aUZoTkRvVlFKVDF3cElKWER6Q0hSWFphUElRaDgyL2hGZGZFb0tRdmg1Q01YWG90
+# TEdNUE5JVnU2M0RjMTNlM0Q1aU5SKzZ2Kzd6Wm8yVUdwNTNSdStlbFRvdGdKaEVh
+# OGFKTWlQdVpOT3hnMithejNRb1k2UUtNMFZDZC8rNU9GTUt3aFBab1FXbHJ1aVFI
+# RCtxTU1ad2VuWUx0eW9JS1RNRjVsMVorQjNFTTl3bkg=
+# -----END RING SIGNATURE-----
+
+# ---------------------------------------
+# Load signature bytes from PEM.
+signFromPEM = PEMtoSign(pemBytes)
+
+# ---------------------------------------
+# Verify signature.
+result = VerifySignature(message, ringPubKeys, signFromPEM)
+print("Result of verification (true):", result)
+# Output:
+# Result of verification (true): True
+
+result = VerifySignature([ord(c) for c in "Hello fokls!"], ringPubKeys, signFromPEM)
+print("Invalid verification (false):", result)
+# Output:
+# Invalid verification (false): False
+```
+
+#### Node.js
+
+Wrapper for [Node.js](https://nodejs.org/) is ready in subfolder `wrappers/nodejs/lirisi/`.
+Before usage, you have to make symlink to binary:
+
+```
+$ ln -s ../../lirisilib.so wrappers/nodejs/lirisi/lirisilib.so
+```
+
+Go to folder `nodejs`:
+
+```
+$ cd wrappers/nodejs
+```
+
+Before run example install required `node` packages:
+
+```
+$ npm install
+```
+
+Now, you can run example:
+
+```
+$ node example.js
+```
+
+Example of usage:
+
+```javascript
+const shuffle = require('shuffle-array')
+const convertHex = require('convert-hex')
+const lirisi = require('lirisi')
+
+const privateKey = lirisi.CreatePrivateKey()
+console.log("Your private key:")
+console.log(convertHex.bytesToHex(privateKey))
+/*
+Your private key:
+2679fd46ca96602c21affaa48b3d4e13b902bb9494751c0a87271d2373e1364a
+*/
+
+const publicKey = lirisi.ExtractPublicKey(privateKey)
+console.log("\nYour public key:")
+console.log(Buffer.from(publicKey).toString("base64"))
+/*
+Your public key:
+BPiG5WjNzwPARnp7oOIbvUl0HPANWIrUsC898xuwYuzlqlBPssGnpm9BUQmgrRm0aAvvOBTYJ4em6Wz76awzLyg=
+*/
+
+// Create the ring of fake public keys.
+const ring = lirisi.CreateRingOfPublicKeys(9)
+
+// Append your public key.
+const ringBytes = ring.concat(publicKey)
+
+// Shuffle ring randomly
+const size = lirisi.GetPubKeyBytesSize()
+let pubsRing = []
+for (let i = 0; i < ringBytes.length / size; i++) {
+    const n = i * size
+    pubsRing.push(ringBytes.slice(n, n + size))
+}
+shuffle(pubsRing)
+// Concat shuffled keys into one array.
+let ringPubs = []
+for (let i = 0; i < pubsRing.length; i++) {
+    ringPubs = ringPubs.concat(pubsRing[i])
+}
+
+// Serialize public keys for save.
+let b64Pubs = []
+for (let i = 0; i < pubsRing.length; i++) {
+    b64Pubs.push(Buffer.from(pubsRing[i]).toString("base64"))
+}
+console.log("\nRing of public keys:")
+console.log(b64Pubs.join("\n"))
+/*
+Ring of public keys:
+BAB0waZBNlIT8n5OgATUJSGeJX6lQxBK+S/WfVsA1UWMDO7yNsbKkdCvFuJYFImfyD0pOv4SWOhlrbkIVslIO+M=
+BLp801LIVSIcOMVoEpfb1PfP19JwI+6wfl4Gy/fppwjEy5ISoShL0OyBSL3QxTDKSPx6dVug3fJPU183uYDjLF4=
+BDGMfeZKpud/RznARmLdDWo00NoNF7Cxqo7q2LNBHNJxP2YkQiVM0Fb/iXxtKIwapxOAB1FUkk7ElIO52mTg69E=
+BPypBiipURq3YXeqkAsDpRQC9+i0mE9iqSzeG86MJ45Z3emIfIiSA119ZnTqemiUJRqg/ei/is9SBJRvpHSFEwA=
+BGp6cefHI9nhIHlce4aF98h/4yaq3zQYCwQp+Ff91FNJdD9fbH/JVzJfLZnJ3xV6sXWRy/bmqWFK8giV1bMi/jM=
+BC/c7mXhJrP9mrwvcBmk78innrYw5WrhuNV/+Vam+Lglx7VE33xnVlwNzqcHvPuzxjRnp4YQT6SJWnX2PVn7kcU=
+BFWqAoa+hoY2bfPZE/TSDBIhIUA+rZYNc8rlnmta1oaANcPdRNXv2QWq3rmBn/RwvYHsHfpXO21qLIUu7mzPLCg=
+BJhZiBf2XiIUIP88TcBP0EwYeEuGW0ek4KtT/MIIlTkpm9SomdRWZPLvHnPy2Yvm3wpMo+jucN7CPMRjhuYUIm4=
+BPiG5WjNzwPARnp7oOIbvUl0HPANWIrUsC898xuwYuzlqlBPssGnpm9BUQmgrRm0aAvvOBTYJ4em6Wz76awzLyg=
+BJd6+bzj43l1dZmkg1ygYSkBRysHOCW+Dx1XH21gADS8bC1bO9qgTcwjE9FyDr7BhJ5AzCZgkce+9nfb6wMK6so=
+*/
+
+// Prepare message to sign.
+const message = "Hello world!"
+
+// Make signature.
+const sign = lirisi.CreateSignature(message, ringPubs, privateKey)
+const pem = lirisi.SignToPEM(sign)
+console.log("\nSignature in PEM:")
+console.log(Buffer.from(pem).toString())
+/*
+Signature in PEM:
+-----BEGIN RING SIGNATURE-----
+KeyImage: Xs6oCbGa1pt0wqVjXZQHLqiLXNNJKa/1VNWeEf6oSSFnzGmOWQ6xhQZirle0aMYP77brws5a71CxUhxHzEeFCA==
+
+QklJQm9GN09xQW14bXRhYmRNS2xZMTJVQnk2b2kxelRTU212OVZUVm5oSCtxRWto
+Wjh4cGpsa09zWVVHWXE1WHRHakdEKysyNjhMT1d1OVFzVkljUjh4SGhRZ1U5aG5T
+N25iTmp0TlNwenAvTk9UbTlFcmliMVlsNHNvK2VJWlU2VXhDanhkclc2c1hWMVp1
+aFp4dXpSMDFjQWp1UHY0NC96cm0yeUNXaWJVSXlSVExWd2dONnZHWVdhWGpqNzdh
+aGJtNm1OcVE2aTFVMS9BTXRmaGk5N2ZrUzVvYTAvL012UllVWHdwWGxvMTh3RXgw
+Y0hFMytCMGh0VS9lOXFxcEtsNWFpVW1xRmp3Y0J5ZUtldXh1UGN3MmQ4bWYxM2p4
+TEpmekVNaGp6MTFEWXNaZzNVTWh6c2pUVFRMd015czI3MXM2bFhyM3lIQlAycXl2
+L0dVdXliclE2S3FvOVBOdHVVYkxDbW5wdEl5MkNTRTlhbkJjSytjQkdqWkpQYTBn
+UDJ1Ym5Kd3diZDRMWnhEcEpzazRlR3RjL2RlNHpiTWdBT3Y1WHlOTkNWQTRvdjND
+cWM0MnM3eVNXM3lQellaZG8rSFN0NWFIV0tCTlRzWmJFVlM2K1oyNmdzM3RKVTQ4
+WVJDSzg5WDdVdXEzeFFZV2lGeW5weWxvc0Q5Ynh0a0FMOWFWLzVRQkwzYmVHY0xJ
+UHBxSGtMSzB5UUFCcFpEbHVlSWFYUzlhQnltOVpkZkU=
+-----END RING SIGNATURE-----
+*/
+
+const signFromPEM = lirisi.PEMtoSign(pem)
+
+// Verify signature.
+const result = lirisi.VerifySignature(message, ringPubs, signFromPEM)
+console.log("Result of verification (1):", result)
+/*
+Result of verification (1): 1
+*/
+
+const failed = lirisi.VerifySignature("foo", ringPubs, signFromPEM)
+console.log("Invalid verification (0):", failed)
+/*
+Invalid verification (0): 0
+*/
+```
 
 ### License
 

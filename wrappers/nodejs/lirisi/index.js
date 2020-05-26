@@ -2,7 +2,7 @@ const ref = require("ref")
 const ffi = require("ffi")
 const Struct = require("ref-struct")
 const ArrayType = require("ref-array")
-
+const path = require("path")
 
 const BytesArray = ArrayType(ref.types.byte)
 
@@ -33,22 +33,47 @@ function toBytes(pointer) {
 function toSlice(array) {
     const slice = new GoSlice()
     slice.data = BytesArray(Array.from(array))
-    slice.len = privateKey.length
-    slice.cap = privateKey.length
+    slice.len = array.length
+    slice.cap = array.length
     return slice
 }
 
 // Create private key
-function CreatePrivateKey() {
-    return toBytes(lib.CreatePrivateKey())
-}
+module.exports.CreatePrivateKey = () => toBytes(lib.CreatePrivateKey())
+
 
 // Extract public key from private key
-function ExtractPublicKey(privateKey) {
-    return toBytes(lib.ExtractPublicKey(toSlice(privateKey)))
-}
+module.exports.ExtractPublicKey = (privateKey) => toBytes(lib.ExtractPublicKey(toSlice(privateKey)))
 
-const lib = ffi.Library("./lirisilib.so", {
+// CreateRingOfPublicKeys creates a ring of public keys.
+module.exports.CreateRingOfPublicKeys = (size) => toBytes(lib.CreateRingOfPublicKeys(size))
+
+// CreateRingOfPublicKeys creates a ring of public keys.
+module.exports.CreateSignature = (message, pubKeysRing, privKey) =>
+    toBytes(lib.CreateSignature(toSlice(message), toSlice(pubKeysRing), toSlice(privKey)))
+
+
+// Convert signature into format PEM.
+module.exports.SignToPEM = (signBytes) => toBytes(lib.SignToPEM(toSlice(signBytes)))
+
+// Convert PEM to signature.
+module.exports.PEMtoSign = (signBytes) => toBytes(lib.PEMtoSign(toSlice(signBytes)))
+
+// VerifySignature verify signature.
+module.exports.VerifySignature = (message, pubKeysRing, sign) =>
+    lib.VerifySignature(toSlice(message), toSlice(pubKeysRing), toSlice(sign))
+
+// GetPubKeyBytesSize is the lenth of bytes serialized public key.
+module.exports.GetPubKeyBytesSize = () => lib.GetPubKeyBytesSize()
+
+
+const lib = ffi.Library(path.join(__dirname, "lirisilib.so"), {
     CreatePrivateKey: [GoBytes, []],
-    ExtractPublicKey: [GoBytes, [GoSlice]]
+    ExtractPublicKey: [GoBytes, [GoSlice]],
+    CreateRingOfPublicKeys: [GoBytes, ["longlong"]],
+    CreateSignature: [GoBytes, [GoSlice, GoSlice, GoSlice]],
+    VerifySignature: ["longlong", [GoSlice, GoSlice, GoSlice]],
+    SignToPEM: [GoBytes, [GoSlice]],
+    PEMtoSign: [GoBytes, [GoSlice]],
+    GetPubKeyBytesSize: ["longlong", []]
 })

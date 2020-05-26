@@ -1,8 +1,8 @@
 {
-  "name": "lirisi",
+  "name": "lirisi-example",
   "version": "1.0.0",
-  "description": "Linkable Ring Signature Library Wrapper",
-  "main": "index.js",
+  "description": "Example Wrapper of LiRiSi Library.",
+  "main": "example.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,6 +11,7 @@
   "dependencies": {
     "convert-hex": "^0.1.0",
     "ffi": "^2.3.0",
+    "lirisi": "file:lirisi",
     "ref": "^1.3.5",
     "ref-array": "^1.2.0",
     "ref-struct": "^1.1.0",
