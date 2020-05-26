@@ -260,7 +260,7 @@ Before usage, you have to make symlink to binary:
 $ ln -s ../../lirisilib.so wrappers/python/lirisi/lirisilib.so
 ```
 
-Now you can run example script [wrappers/python/example.py](https://github.com/zbohm/lirisi/blob/master/wrappers/python/example.py):
+Now you can run example script `example.py`:
 
 ```
 $ python wrappers/python/example.py
@@ -341,7 +341,9 @@ print('\n'.join(pubList))
 
 # ---------------------------------------
 # Prepare message to sign.
-message = [ord(c) for c in "Hello world!"]
+# It is a list of bytes - bytearray.
+# message = [ord(c) for c in "Hello world!"]
+message = "Hello world!".encode()
 
 # ---------------------------------------
 # Make signature.

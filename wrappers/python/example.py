@@ -69,7 +69,9 @@ print('\n'.join(pubList))
 
 # ---------------------------------------
 # Prepare message to sign.
-message = [ord(c) for c in "Hello world!"]
+# It is a list of bytes - bytearray.
+# message = [ord(c) for c in "Hello world!"]
+message = "Hello world!".encode()
 
 # ---------------------------------------
 # Make signature.
