@@ -52,6 +52,7 @@ Commands:
   create-testing-ring
   sign
   verify
+  get-key-image
 
 Examples:
   ...
@@ -176,6 +177,13 @@ $ lirisi --message='Hello world!' --ring=ring.lst --signature=signature.pem veri
 
 Exit status of `SUCCESS` is `0`. Exit status of `ERROR` is `1`. So, you can use it in the [shell scripts](https://en.wikipedia.org/wiki/Shell_script).
 
+If the verifier need to save signature key identifier, extracrt this:
+
+```
+$ lirisi --signature=signature.pem get-private-key-id > private-key-id.b64
+$ cat private-key-id.b64
+Aeih2pvFV4RR1m9eCAasWHT4IixKfQ+AIf0v+Op8sfHjc1C8jO4fpnu/ngkFnrF8zCKMzdBHwGZyBXqelDUWDw==
+```
 
 ## Library
 

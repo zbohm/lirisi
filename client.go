@@ -82,6 +82,14 @@ func main() {
 		return
 	}
 
+	if command == "get-private-key-id" {
+		if *signature == "" {
+			log.Fatal("Parameter --signature missing.")
+		}
+		client.GetKeyImage(*output, *signature)
+		return
+	}
+
 	usage := `Usage:
   lirisi [params] COMMAND
 
@@ -91,6 +99,7 @@ Commands:
   create-testing-ring
   sign
   verify
+  get-key-image
 
 Examples:
   lirisi create-private-key > private-key.hex
@@ -110,6 +119,9 @@ Examples:
 
   lirisi --message='Hello world!' --ring=ring.lst --signature=signature.pem verify
   lirisi --message='Hello world!' --ring=ring.lst --signature=signature.pem --output=result.txt verify
+
+  lirisi --signature=signature.pem get-private-key-id > private-key-id.b64
+  lirisi --signature=signature.pem --output=private-key-id.b64 get-private-key-id
 `
 	fmt.Println(usage)
 }

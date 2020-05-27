@@ -150,3 +150,22 @@ func VerifySignature(output, message, ringFilename, signatureFilename string) {
 		}
 	}
 }
+
+// GetKeyImage returns private key identifier.
+func GetKeyImage(output, signatureFilename string) {
+	// Load signature
+	pem, err := ioutil.ReadFile(signatureFilename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sign, err := ring.FromPEM(pem)
+	if err != nil {
+		log.Fatal(err)
+	}
+	keyImage := sign.ImageToBase64()
+	if output == "" {
+		fmt.Println(string(keyImage))
+	} else {
+		ioutil.WriteFile(output, keyImage, 0600)
+	}
+}
