@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"golang.org/x/crypto/sha3"
 )
 
 var message = []byte(`
@@ -284,5 +285,32 @@ func TestVerifySignMissingPublicKey(t *testing.T) {
 	ver := VerifySign(sig, message, pubKeys)
 	if ver {
 		t.Error("unexpected Verify sign success")
+	}
+}
+
+// https://kewde.github.io/urs Unique Ring Signatures (URS) - broken cryptography
+func TestFindPubKey(t *testing.T) {
+	privkey, err := crypto.GenerateKey()
+	if err != nil {
+		t.Error(err)
+	}
+	pubKey := privkey.Public().(*ecdsa.PublicKey)
+	pubKeys := createPublicKeyList(3)
+	pubKeys = append(pubKeys, pubKey)
+	sig, err := Sign(message, pubKeys, privkey, 3)
+	if err != nil {
+		t.Error(err)
+	}
+	ver := VerifySign(sig, message, pubKeys)
+	if !ver {
+		t.Error("Verify sign failed")
+	}
+	curve := pubKey.Curve
+	msgHash := sha3.Sum256(message)
+	for j := 0; j < len(pubKeys); j++ {
+		rx, ry := curve.ScalarMult(pubKeys[j].X, pubKeys[j].Y, msgHash[:])
+		if sig.I.X.Cmp(rx) == 0 && sig.I.Y.Cmp(ry) == 0 {
+			t.Errorf("Exploit! Found signing key: %d\nX: %x\nY: %x\n", j, rx, ry)
+		}
 	}
 }
