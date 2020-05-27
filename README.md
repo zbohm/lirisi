@@ -180,7 +180,7 @@ Exit status of `SUCCESS` is `0`. Exit status of `ERROR` is `1`. So, you can use 
 If the verifier need to save signature key identifier, extracrt this:
 
 ```
-$ lirisi --signature=signature.pem get-private-key-id > private-key-id.b64
+$ lirisi --signature=signature.pem get-key-image > private-key-id.b64
 $ cat private-key-id.b64
 Aeih2pvFV4RR1m9eCAasWHT4IixKfQ+AIf0v+Op8sfHjc1C8jO4fpnu/ngkFnrF8zCKMzdBHwGZyBXqelDUWDw==
 ```

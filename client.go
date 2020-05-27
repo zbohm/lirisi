@@ -82,7 +82,7 @@ func main() {
 		return
 	}
 
-	if command == "get-private-key-id" {
+	if command == "get-key-image" {
 		if *signature == "" {
 			log.Fatal("Parameter --signature missing.")
 		}
@@ -120,8 +120,8 @@ Examples:
   lirisi --message='Hello world!' --ring=ring.lst --signature=signature.pem verify
   lirisi --message='Hello world!' --ring=ring.lst --signature=signature.pem --output=result.txt verify
 
-  lirisi --signature=signature.pem get-private-key-id > private-key-id.b64
-  lirisi --signature=signature.pem --output=private-key-id.b64 get-private-key-id
+  lirisi --signature=signature.pem get-key-image > private-key-id.b64
+  lirisi --signature=signature.pem --output=private-key-id.b64 get-key-image
 `
 	fmt.Println(usage)
 }
