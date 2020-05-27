@@ -158,7 +158,7 @@ OE92bVcwMWgwZ1hIaExBL2lHdGZoTFdoSDE3bVd0aUU=
 ```
 
 The signature contains the so-called value "Key Image". This is the unique identifier of your private key. Each signature you create with your private key contains this identifier.
-The verifier recognizes the duplicate signature based on this identifier if you create more than one. Nevertheless, it is not possible to find out from the signature which of the signers, to whom the public keys belong, who created the signature. The signatory can only verify the validity of the signature:
+The verifier recognizes the duplicate signature based on this identifier if you create more than one. Nevertheless, it is not possible to find out from the signature which of the signers, to whom the public keys belong, who created the signature. The verifier can only verify the validity of the signature:
 
 ```
 $ lirisi --message='Hello world!' --ring=ring-of-public.keys --signature=signature.pem verify
@@ -349,7 +349,7 @@ message = "Hello world!".encode()
 sign = CreateSignature(message, ringPubKeys, privateKey)
 pemBytes = SignToPEM(sign)
 print("\nSignature in PEM:")
-print("".join([chr(c) for c in pemBytes]))
+print(bytearray(pemBytes).decode())
 # Output:
 # Signature in PEM:
 # -----BEGIN RING SIGNATURE-----
@@ -372,6 +372,8 @@ print("".join([chr(c) for c in pemBytes]))
 # ---------------------------------------
 # Load signature bytes from PEM.
 signFromPEM = PEMtoSign(pemBytes)
+
+# Get KeyImage
 
 # ---------------------------------------
 # Verify signature.
@@ -401,7 +403,7 @@ Go to folder `nodejs`:
 $ cd wrappers/nodejs
 ```
 
-Before run example install required `node` packages:
+Before run example install necessary `node` packages:
 
 ```
 $ npm install
@@ -420,6 +422,7 @@ const shuffle = require('shuffle-array')
 const convertHex = require('convert-hex')
 const lirisi = require('lirisi')
 
+// Create your provate key.
 const privateKey = lirisi.CreatePrivateKey()
 console.log("Your private key:")
 console.log(convertHex.bytesToHex(privateKey))
@@ -428,6 +431,7 @@ Your private key:
 2679fd46ca96602c21affaa48b3d4e13b902bb9494751c0a87271d2373e1364a
 */
 
+// Extract public key.
 const publicKey = lirisi.ExtractPublicKey(privateKey)
 console.log("\nYour public key:")
 console.log(Buffer.from(publicKey).toString("base64"))
@@ -520,6 +524,10 @@ console.log("Invalid verification (0):", failed)
 Invalid verification (0): 0
 */
 ```
+
+### Version
+
+This project is still under construction. For real usage wait for version v1.0.0.
 
 ### License
 

@@ -7,6 +7,7 @@ const shuffle = require('shuffle-array')
 const convertHex = require('convert-hex')
 const lirisi = require('lirisi')
 
+// Create your provate key.
 const privateKey = lirisi.CreatePrivateKey()
 console.log("Your private key:")
 console.log(convertHex.bytesToHex(privateKey))
@@ -15,6 +16,7 @@ Your private key:
 2679fd46ca96602c21affaa48b3d4e13b902bb9494751c0a87271d2373e1364a
 */
 
+// Extract public key.
 const publicKey = lirisi.ExtractPublicKey(privateKey)
 console.log("\nYour public key:")
 console.log(Buffer.from(publicKey).toString("base64"))

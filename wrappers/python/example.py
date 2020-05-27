@@ -78,7 +78,7 @@ message = "Hello world!".encode()
 sign = CreateSignature(message, ringPubKeys, privateKey)
 pemBytes = SignToPEM(sign)
 print("\nSignature in PEM:")
-print("".join([chr(c) for c in pemBytes]))
+print(bytearray(pemBytes).decode())
 
 # Output:
 # -----BEGIN RING SIGNATURE-----
