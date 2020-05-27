@@ -1,7 +1,7 @@
 import random
 
-from lirisi import (CreatePrivateKey, CreateRingOfPublicKeys, CreateSignature, GetPubKeyBytesSize, ExtractPublicKey,
-                    PEMtoSign, SignToPEM, ToBase64, ToHex, VerifySignature)
+from lirisi import (CreatePrivateKey, CreateRingOfPublicKeys, CreateSignature, GetKeyImage, GetPubKeyBytesSize,
+                    ExtractPublicKey, PEMtoSign, SignToPEM, ToBase64, ToHex, VerifySignature)
 
 
 # ---------------------------------------
@@ -113,3 +113,12 @@ result = VerifySignature([ord(c) for c in "Hello fokls!"], ringPubKeys, signFrom
 print("Invalid verification (false):", result)
 # Output:
 # Invalid verification (false): False
+
+# ---------------------------------------
+# Get KeyImage - unique private key identifier.
+keyImage = GetKeyImage(sign)
+print("\nYour private key image:")
+print(ToBase64(keyImage).decode())
+# Output:
+# Your private key image:
+# pOcgOuwHYPTT8Ofi/+rqlVM0jxntrlWh1aUqmssQptE+5a7pyA3kOs//gPySO2aVXR45VZVnxqI+aWXbhijZfg==

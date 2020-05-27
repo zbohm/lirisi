@@ -394,6 +394,15 @@ result = VerifySignature([ord(c) for c in "Hello fokls!"], ringPubKeys, signFrom
 print("Invalid verification (false):", result)
 # Output:
 # Invalid verification (false): False
+
+# ---------------------------------------
+# Get KeyImage - unique private key identifier.
+keyImage = GetKeyImage(sign)
+print("\nYour private key image:")
+print(ToBase64(keyImage).decode())
+# Output:
+# Your private key image:
+# pOcgOuwHYPTT8Ofi/+rqlVM0jxntrlWh1aUqmssQptE+5a7pyA3kOs//gPySO2aVXR45VZVnxqI+aWXbhijZfg==
 ```
 
 #### Node.js
@@ -531,11 +540,18 @@ console.log("Invalid verification (0):", failed)
 /*
 Invalid verification (0): 0
 */
+
+// Get KeyImage - unique private key identifier.
+const keyImage = lirisi.GetKeyImage(signFromPEM)
+console.log("\nKeyImage:", Buffer.from(keyImage).toString("base64"))
+/*
+KeyImage: rVCx0N999oGof35UnuNC35RcYfTpEUD7ORupIQDV+yLrpC7CbDMGPPPRzK6HpnjS/apWP5Grb9qWsOuevW1ixw==
+*/
 ```
 
-### Version
+### Project status
 
-This project is still under construction. For real usage wait for version v1.0.0.
+This project is still under development. For real usage wait for version v1.0.0.
 
 ### License
 

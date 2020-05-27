@@ -66,6 +66,9 @@ module.exports.VerifySignature = (message, pubKeysRing, sign) =>
 // GetPubKeyBytesSize is the lenth of bytes serialized public key.
 module.exports.GetPubKeyBytesSize = () => lib.GetPubKeyBytesSize()
 
+// Get KeyImage from signature.
+module.exports.GetKeyImage = (signBytes) => toBytes(lib.GetKeyImage(toSlice(signBytes)))
+
 
 const lib = ffi.Library(path.join(__dirname, "lirisilib.so"), {
     CreatePrivateKey: [GoBytes, []],
@@ -75,5 +78,6 @@ const lib = ffi.Library(path.join(__dirname, "lirisilib.so"), {
     VerifySignature: ["longlong", [GoSlice, GoSlice, GoSlice]],
     SignToPEM: [GoBytes, [GoSlice]],
     PEMtoSign: [GoBytes, [GoSlice]],
-    GetPubKeyBytesSize: ["longlong", []]
+    GetPubKeyBytesSize: ["longlong", []],
+    GetKeyImage: [GoBytes, [GoSlice]]
 })

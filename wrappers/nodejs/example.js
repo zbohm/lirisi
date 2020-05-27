@@ -108,3 +108,10 @@ console.log("Invalid verification (0):", failed)
 /*
 Invalid verification (0): 0
 */
+
+// Get KeyImage - unique private key identifier.
+const keyImage = lirisi.GetKeyImage(signFromPEM)
+console.log("\nKeyImage:", Buffer.from(keyImage).toString("base64"))
+/*
+KeyImage: rVCx0N999oGof35UnuNC35RcYfTpEUD7ORupIQDV+yLrpC7CbDMGPPPRzK6HpnjS/apWP5Grb9qWsOuevW1ixw==
+*/

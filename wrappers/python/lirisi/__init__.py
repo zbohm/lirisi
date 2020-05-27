@@ -1,2 +1,2 @@
-from .library import (CreatePrivateKey, CreateRingOfPublicKeys, CreateSignature, ExtractPublicKey, GetPubKeyBytesSize,
-                      PEMtoSign, SignToPEM, ToBase64, ToHex, VerifySignature)
+from .library import (CreatePrivateKey, CreateRingOfPublicKeys, CreateSignature, ExtractPublicKey, GetKeyImage,
+                      GetPubKeyBytesSize, PEMtoSign, SignToPEM, ToBase64, ToHex, VerifySignature)

@@ -142,4 +142,14 @@ func PEMtoSign(data []byte) unsafe.Pointer {
 	return bytesToPointer(sign.ToBytes())
 }
 
+// GetKeyImage extract KeyImage from signature bytes.
+//export GetKeyImage
+func GetKeyImage(data []byte) unsafe.Pointer {
+	sign, err := ring.FromBytes(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bytesToPointer(sign.ImageToBytes())
+}
+
 func main() {}

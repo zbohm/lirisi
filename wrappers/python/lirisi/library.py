@@ -79,6 +79,12 @@ def GetPubKeyBytesSize() -> int:
     """Get size of bytes serializted public key."""
     return lib.GetPubKeyBytesSize()
 
+def GetKeyImage(sign: List[int]) -> List[int]:
+    """Get KeyImage from signature."""
+    lib.GetKeyImage.argtypes = [GoSlice]
+    lib.GetKeyImage.restype = BuffBytes
+    return toBytes(lib.GetKeyImage(goSlice(sign)))
+
 
 # Private module functions
 
