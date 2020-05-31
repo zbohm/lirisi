@@ -13,14 +13,18 @@ import (
 )
 
 // ## Data structure definition
-
-// RingSignatureProtocol DEFINITIONS ::= BEGIN
-// 	Signature ::= OCTET STRING (SIZE(
-// 		32 -- Image.X
-// 		32 -- Image.Y
-// 		32 -- C
-// 		32 * n  -- n is number of S octets
-// 	))
+// RingSignature DEFINITIONS ::=
+// BEGIN
+// 	Uint32 ::= OCTET STRING (SIZE(32))
+// 	KeyImage  ::= SEQUENCE {
+// 		X	Uint32,
+// 		Y	Uint32
+// 	}
+// 	Signature  ::=  SEQUENCE {
+// 		KeyImage	keyImage,
+// 		Checksum	Uint32,
+// 		Signatures	SEQUENCE OF Uint32
+// 	}
 // END
 
 // ImageToBytes returns bytes signature unique code.
