@@ -1,3 +1,19 @@
+// Copyright 2020 noot (elizabeth@chainsafe.io)
+// This file is part of ring-go.
+//
+// The ring-go library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The ring-go library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the ring-go library. If not, see <http://www.gnu.org/licenses/>.
+
 package ring
 
 import (
@@ -305,12 +321,23 @@ func TestFindPubKey(t *testing.T) {
 	if !ver {
 		t.Error("Verify sign failed")
 	}
-	curve := pubKey.Curve
-	msgHash := sha3.Sum256(message)
-	for j := 0; j < len(pubKeys); j++ {
-		rx, ry := curve.ScalarMult(pubKeys[j].X, pubKeys[j].Y, msgHash[:])
-		if sig.I.X.Cmp(rx) == 0 && sig.I.Y.Cmp(ry) == 0 {
-			t.Errorf("Exploit! Found signing key: %d\nX: %x\nY: %x\n", j, rx, ry)
+
+	for i, p := range pubKeys {
+		image := genKeyImageFromPubkey(p)
+		if sig.I.X.Cmp(image.X) == 0 && sig.I.Y.Cmp(image.Y) == 0 {
+			t.Errorf("Exploit! Found signing key: %d\nX: %x\nY: %x\n", i, p.X, p.Y)
 		}
 	}
+}
+
+// genKeyImageFromPubkey calculates key image I = P * sha3(P)
+func genKeyImageFromPubkey(p *ecdsa.PublicKey) *PrivKeyImage {
+	image := new(PrivKeyImage)
+
+	// calculate sha3(P)
+	hash := sha3.Sum256(append(p.X.Bytes(), p.Y.Bytes()...))
+
+	// calculate I = P * sha3(P) = x * G * sha3(P)
+	image.X, image.Y = p.Curve.ScalarMult(p.X, p.Y, hash[:])
+	return image
 }
