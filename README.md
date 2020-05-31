@@ -552,6 +552,7 @@ KeyImage: rVCx0N999oGof35UnuNC35RcYfTpEUD7ORupIQDV+yLrpC7CbDMGPPPRzK6HpnjS/apWP5
 ### Project status
 
 This project is still under development. For real usage wait for version v1.0.0.
+Caution! Do not use this project for production. The correct KeyImage creation is still not resolved. For more see result of TestFindPubKey.
 
 ### License
 
