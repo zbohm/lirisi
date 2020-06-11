@@ -5,6 +5,9 @@
 
 # Linkable Ring Signature
 
+```diff
+- Caution! Do not use for production! The project is suspended until the KeyImage value is resolved.
+```
 
 ### Abstract
 
