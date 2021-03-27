@@ -1,2 +1,4 @@
-from .library import (CreatePrivateKey, CreateRingOfPublicKeys, CreateSignature, ExtractPublicKey, GetKeyImage,
-                      GetPubKeyBytesSize, PEMtoSign, SignToPEM, ToBase64, ToHex, VerifySignature)
+from .exceptions import LirisiException
+from .library import (CreateSignature, FoldPublicKeys, PublicKeysDigest,
+                      PublicKeyXYCoordinates, SignatureKeyImage,
+                      UnfoldPublicKeys, VerifySignature)

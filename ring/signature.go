@@ -1,275 +1,164 @@
-// Copyright 2020 noot (elizabeth@chainsafe.io)
-// This file is part of ring-go.
-//
-// The ring-go library is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// The ring-go library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with the ring-go library. If not, see <http://www.gnu.org/licenses/>.
-
 package ring
 
 import (
-	"bytes"
-	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
-	"errors"
-	"fmt"
-	"math/big"
+	"encoding/asn1"
+	"reflect"
+
+	"hash"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/keybase/go-crypto/brainpool"
 	"golang.org/x/crypto/sha3"
 )
 
-// PrivKeyImage is unique private key identifier.
-type PrivKeyImage struct {
-	X *big.Int
-	Y *big.Int
-}
-
 // Signature is struct with signature data.
+// ## Serialize to DER
+// ```
+// PointData DEFINITIONS ::= BEGIN
+// 		X := INTEGER
+// 		Y := INTEGER
+// END
+//
+// Signature DEFINITIONS ::= BEGIN
+//     Name       ::= OCTET STRING,
+//     Version    ::= INTEGER,
+//     CurveOID   ::= OBJECT IDENTIFIER,
+//     HashOID    ::= OBJECT IDENTIFIER,
+//     KeyImage   ::= PointData,
+//     Checksum   ::= INTEGER,
+//     Signatures ::= SEQUENCE OF INTEGER
+// END
+// ```
+// openssl asn1parse -i -dump -in signature.pem
+
+// PointData holds X,Y coordinates of point.
+// https://tools.ietf.org/html/rfc5480#section-2.2
+// ECPoint ::= OCTET STRING
+type PointData struct {
+	X []byte
+	Y []byte
+}
+
+// Signature holds data of ring signature.
 type Signature struct {
-	I *PrivKeyImage // private key image
-	C *big.Int      // ring signature value
-	S []*big.Int    // ring signature list of faked secret keys
+	Name       string
+	Version    int
+	CurveOID   asn1.ObjectIdentifier
+	HasherOID  asn1.ObjectIdentifier
+	KeyImage   PointData
+	Checksum   []byte
+	Signatures [][]byte
 }
 
-// PublicKeysList is the list of public keys.
-type PublicKeysList []*ecdsa.PublicKey
-
-var curve elliptic.Curve
-
-// GetPosition returns the position of given public key in the list of public keys.
-func GetPosition(ring PublicKeysList, pubkey *ecdsa.PublicKey) (int, bool) {
-	for i, pub := range ring {
-		if pub.X.Cmp(pubkey.X) == 0 && pub.Y.Cmp(pubkey.Y) == 0 {
-			return i, true
-		}
-	}
-	return -1, false
+// FoldedPublicKeys holds data of points of public keys.
+type FoldedPublicKeys struct {
+	Name      string
+	CurveOID  asn1.ObjectIdentifier
+	HasherOID asn1.ObjectIdentifier
+	Digest    []byte
+	Keys      [][]byte
 }
 
-// GenKeyImage calculates key image I = x * H_p(P) where H_p is a hash function that returns a point
-// H_p(P) = sha3(P) * G
-func GenKeyImage(privkey *ecdsa.PrivateKey) *PrivKeyImage {
-	pubkey := privkey.Public().(*ecdsa.PublicKey)
-	image := new(PrivKeyImage)
-
-	// calculate sha3(P)
-	hX, hY := hashPoint(pubkey)
-
-	// calculate H_p(P) = x * sha3(P) * G
-	image.X, image.Y = privkey.Curve.ScalarMult(hX, hY, privkey.D.Bytes())
-	return image
+// CurveCodes maps curve names to curves available to make signature.
+var CurveCodes = map[string]func() elliptic.Curve{
+	"secp224r1":  elliptic.P224, // NIST/SECG curve over a 224 bit prime field
+	"prime256v1": elliptic.P256, // X9.62/SECG curve over a 256 bit prime field
+	"secp384r1":  elliptic.P384, // NIST/SECG curve over a 384 bit prime field
+	"secp521r1":  elliptic.P521, // NIST/SECG curve over a 521 bit prime field
+	// x509.ParsePKIXPublicKey: unsupported elliptic curve
+	"brainpoolP256r1": brainpool.P256r1, // RFC 5639 curve over a 256 bit prime field
+	"brainpoolP256t1": brainpool.P256t1, // RFC 5639 curve over a 256 bit prime field
+	"brainpoolP384r1": brainpool.P384r1, // RFC 5639 curve over a 384 bit prime field
+	"brainpoolP384t1": brainpool.P384t1, // RFC 5639 curve over a 384 bit prime field
+	"brainpoolP512r1": brainpool.P512r1, // RFC 5639 curve over a 512 bit prime field
+	"brainpoolP512t1": brainpool.P512t1, // RFC 5639 curve over a 512 bit prime field
+	"secp256k1":       crypto.S256,      // SECG curve over a 256 bit prime field
 }
 
-// hashPoint creates hash of elliptic Point.
-func hashPoint(p *ecdsa.PublicKey) (*big.Int, *big.Int) {
-	hash := sha3.Sum256(append(p.X.Bytes(), p.Y.Bytes()...))
-	return p.Curve.ScalarBaseMult(hash[:])
+// HashCodes maps hash names to hash functions available to make signature.
+// printf "test" | openssl dgst -sha3-256
+var HashCodes = map[string]func() hash.Hash{
+	"sha3-224": sha3.New224,
+	"sha3-256": sha3.New256,
+	"sha3-384": sha3.New384,
+	"sha3-512": sha3.New512,
 }
 
-// Sign creates ring signature from list of public keys given inputs:
-// message: a byte array message to be signed
-// ring: array of *ecdsa.PublicKeys
-// privkey: *ecdsa.PrivateKey of signer
-// s: secret index of signer in ring
-func Sign(message []byte, ring PublicKeysList, privkey *ecdsa.PrivateKey, s int) (*Signature, error) {
-	// check ringsize > 1
-	msgHash := sha3.Sum256(message)
-	ringsize := len(ring)
-	if ringsize < 2 {
-		return nil, errors.New("size of ring less than two")
-	} else if s >= ringsize || s < 0 {
-		return nil, errors.New("secret index out of range of ring size")
-	}
+// Status codes for sign/verify functions.
+const (
+	Origin                            = "github.com/zbohm/lirisi"
+	SignatureVersion                  = 1
+	Success                           = 0
+	PrivateKeyNotFitPublic            = 1
+	InsufficientNumberOfPublicKeys    = 2
+	PrivateKeyPositionOutOfRange      = 3
+	PrivateKeyNotFoundAmongPublicKeys = 4
+	UnexpectedCurveType               = 5
+	UnexpectedHashType                = 6
+	IncorrectNumberOfSignatures       = 7
+	InvalidKeyImage                   = 8
+	IncorrectChecksum                 = 9
+	OIDHasherNotFound                 = 10
+	OIDCurveNotFound                  = 11
+	UnsupportedCurveHashCombination   = 12
+	PointWasNotFound                  = 13
+	DecodePEMFailure                  = 14
+	UnexpectedRestOfSignature         = 15
+	Asn1MarshalFailed                 = 16
+	EncodePEMFailed                   = 17
+	InvalidPointCoordinates           = 18
+	NilPointCoordinates               = 19
+	ParseECPrivateKeyFailure          = 20
+	Asn1UnmarshalFailed               = 21
+	MarshalPKIXPublicKeyFailed        = 22
+	ParsePKIXPublicKeyFailed          = 23
+)
 
-	// setup
-	pubkey := &privkey.PublicKey
-	curve := pubkey.Curve
-	sig := new(Signature)
-
-	// check that curve of public key exists
-	if curve == nil {
-		return nil, errors.New("no curve in public key")
-	}
-
-	// check that key at index s is indeed the signer
-	if ring[s].X.Cmp(pubkey.X) != 0 || ring[s].Y.Cmp(pubkey.Y) != 0 {
-		return nil, errors.New("secret index in ring is not signer")
-	}
-
-	// generate private key image
-	image := GenKeyImage(privkey)
-	sig.I = image
-
-	// start at c[1]
-	// pick random scalar u (glue value), calculate c[1] = H(m, u*G) where H is a hash function and G is the base point of the curve
-	C := make([]*big.Int, ringsize)
-	S := make([]*big.Int, ringsize)
-
-	// pick random scalar u
-	u, err := rand.Int(rand.Reader, curve.Params().P)
-	if err != nil {
-		return nil, err
-	}
-
-	// start at secret index s
-	// compute L_s = u*G
-	lX, lY := curve.ScalarBaseMult(u.Bytes())
-	// compute R_s = u*H_p(P[s])
-	hX, hY := hashPoint(pubkey)
-	rX, rY := curve.ScalarMult(hX, hY, u.Bytes())
-
-	l := append(lX.Bytes(), lY.Bytes()...)
-	r := append(rX.Bytes(), rY.Bytes()...)
-
-	// concatenate m and u*G and calculate c[s+1] = H(m, L_s, R_s)
-	CI := sha3.Sum256(append(msgHash[:], append(l, r...)...))
-	idx := (s + 1) % ringsize
-	C[idx] = new(big.Int).SetBytes(CI[:])
-	curveParams := curve.Params().P
-
-	// start loop at s+1
-	for i := 1; i < ringsize; i++ {
-		idx := (s + i) % ringsize
-
-		// pick random scalar sI
-		sI, err := rand.Int(rand.Reader, curveParams)
-		S[idx] = sI
-		if err != nil {
-			return nil, err
-		}
-
-		if ring[idx] == nil {
-			return nil, fmt.Errorf("No public key at index %d", idx)
-		}
-		if ring[idx].Curve == nil {
-			return nil, fmt.Errorf("No curve at index %d", idx)
-		}
-
-		// calculate L_i = s_i*G + c_i*P_i
-		px, py := curve.ScalarMult(ring[idx].X, ring[idx].Y, C[idx].Bytes()) // px, py = c_i*P_i
-		sx, sy := curve.ScalarBaseMult(sI.Bytes())                           // sx, sy = s[n-1]*G
-		lX, lY := curve.Add(sx, sy, px, py)
-
-		// calculate R_i = sI*H_p(P_i) + c_i*I
-		px, py = curve.ScalarMult(image.X, image.Y, C[idx].Bytes()) // px, py = c_i*I
-		hx, hy := hashPoint(ring[idx])
-		sx, sy = curve.ScalarMult(hx, hy, sI.Bytes()) // sx, sy = s[n-1]*H_p(P_i)
-		rX, rY := curve.Add(sx, sy, px, py)
-
-		// calculate c[i+1] = H(m, L_i, R_i)
-		l := append(lX.Bytes(), lY.Bytes()...)
-		r := append(rX.Bytes(), rY.Bytes()...)
-		CI = sha3.Sum256(append(msgHash[:], append(l, r...)...))
-
-		if i == ringsize-1 {
-			C[s] = new(big.Int).SetBytes(CI[:])
-		} else {
-			C[(idx+1)%ringsize] = new(big.Int).SetBytes(CI[:])
-		}
-	}
-
-	// close ring by finding S[s] = ( u - c[s]*k[s] ) mod P where k[s] is the private key and P is the order of the curve
-	S[s] = new(big.Int).Mod(new(big.Int).Sub(u, new(big.Int).Mul(C[s], privkey.D)), curve.Params().N)
-
-	// check that u*G = S[s]*G + c[s]*P[s]
-	ux, uy := curve.ScalarBaseMult(u.Bytes()) // u*G
-	px, py := curve.ScalarMult(ring[s].X, ring[s].Y, C[s].Bytes())
-	sx, sy := curve.ScalarBaseMult(S[s].Bytes())
-	lX, lY = curve.Add(sx, sy, px, py)
-
-	// check that u*H_p(P[s]) = S[s]*H_p(P[s]) + C[s]*I
-	px, py = curve.ScalarMult(image.X, image.Y, C[s].Bytes()) // px, py = C[s]*I
-	hx, hy := hashPoint(ring[s])
-	tx, ty := curve.ScalarMult(hx, hy, u.Bytes())
-	sx, sy = curve.ScalarMult(hx, hy, S[s].Bytes()) // sx, sy = S[s]*H_p(P[s])
-	rX, rY = curve.Add(sx, sy, px, py)
-
-	l = append(lX.Bytes(), lY.Bytes()...)
-	r = append(rX.Bytes(), rY.Bytes()...)
-
-	// check that H(m, L[s], R[s]) == C[s+1]
-	CI = sha3.Sum256(append(msgHash[:], append(l, r...)...))
-
-	if !bytes.Equal(ux.Bytes(), lX.Bytes()) || !bytes.Equal(uy.Bytes(), lY.Bytes()) || !bytes.Equal(tx.Bytes(), rX.Bytes()) || !bytes.Equal(ty.Bytes(), rY.Bytes()) {
-		return nil, errors.New("error closing ring")
-	}
-
-	// everything ok, add values to signature
-	sig.S = S
-	sig.C = C[0]
-
-	return sig, nil
+// ErrorMessages convert status codes to human readable error messages.
+var ErrorMessages = map[int]string{
+	PrivateKeyNotFitPublic:            "Private key not fit public.",
+	InsufficientNumberOfPublicKeys:    "Insufficient number of public keys.",
+	PrivateKeyPositionOutOfRange:      "Private key position out of range.",
+	PrivateKeyNotFoundAmongPublicKeys: "Private key not found among public keys.",
+	UnexpectedCurveType:               "Unexpected curve type.",
+	UnexpectedHashType:                "Unexpected hash type.",
+	IncorrectNumberOfSignatures:       "Incorrect number of signatures.",
+	InvalidKeyImage:                   "Invalid key image.",
+	IncorrectChecksum:                 "Incorrect checksum.",
+	OIDHasherNotFound:                 "OID hasher not found.",
+	OIDCurveNotFound:                  "OID curve not found.",
+	UnsupportedCurveHashCombination:   "Unsupported curve hash combination.",
+	PointWasNotFound:                  "A point on the curve was not found. Please try another case identigier.",
+	DecodePEMFailure:                  "Decode PEM failed.",
+	UnexpectedRestOfSignature:         "Unexpected rest at the end of signature.",
+	Asn1MarshalFailed:                 "ASN1 Marshal failed.",
+	EncodePEMFailed:                   "PEM Encode failed.",
+	InvalidPointCoordinates:           "Invalid point coordinates.",
+	NilPointCoordinates:               "Nil point coordinates.",
+	ParseECPrivateKeyFailure:          "Parse EC private key failed.",
+	Asn1UnmarshalFailed:               "ASN1 Unmarshal Failed.",
+	MarshalPKIXPublicKeyFailed:        "Marshal PKIX public key falied.",
+	ParsePKIXPublicKeyFailed:          "Parse PKIX public key falied.",
 }
 
-// CreateSign creates ring signature from list of public keys given inputs:
-// message: a byte array message to be signed
-// ring: array of *ecdsa.PublicKeys
-// privkey: *ecdsa.PrivateKey of signer
-func CreateSign(message []byte, ring PublicKeysList, privkey *ecdsa.PrivateKey) (*Signature, error) {
-	pubkey := privkey.Public().(*ecdsa.PublicKey)
-	keyPos, found := GetPosition(ring, pubkey)
-	if !found {
-		return nil, errors.New("position of public key was not found")
-	}
-	return Sign(message, ring, privkey, keyPos)
-}
-
-// VerifySign verifies ring signature contained in Signature struct
-// message: message to be signed
-// ring: array of *ecdsa.PublicKeys
-// returns true if a valid signature, false otherwise
-func VerifySign(sig *Signature, message []byte, ring PublicKeysList) bool {
-	ringsize := len(sig.S) // sig.Size
-	if ringsize != len(ring) {
-		return false
-	}
-	msgHash := sha3.Sum256(message)
-
-	if curve == nil {
-		curve = crypto.S256()
-	}
-
-	S := sig.S
-	C := make([]*big.Int, ringsize)
-	C[0] = sig.C
-	image := sig.I
-
-	// calculate c[i+1] = H(m, s[i]*G + c[i]*P[i])
-	// and c[0] = H)(m, s[n-1]*G + c[n-1]*P[n-1]) where n is the ring size
-	for i := 0; i < ringsize; i++ {
-		// calculate L_i = s_i*G + c_i*P_i
-		px, py := curve.ScalarMult(ring[i].X, ring[i].Y, C[i].Bytes()) // px, py = c_i*P_i
-		sx, sy := curve.ScalarBaseMult(S[i].Bytes())                   // sx, sy = s[i]*G
-		lX, lY := curve.Add(sx, sy, px, py)
-
-		// calculate R_i = s_i*H_p(P_i) + c_i*I
-		px, py = curve.ScalarMult(image.X, image.Y, C[i].Bytes()) // px, py = c[i]*I
-		hx, hy := hashPoint(ring[i])
-		sx, sy = curve.ScalarMult(hx, hy, S[i].Bytes()) // sx, sy = s[i]*H_p(P[i])
-		rX, rY := curve.Add(sx, sy, px, py)
-
-		// calculate c[i+1] = H(m, L_i, R_i)
-		l := append(lX.Bytes(), lY.Bytes()...)
-		r := append(rX.Bytes(), rY.Bytes()...)
-		CI := sha3.Sum256(append(msgHash[:], append(l, r...)...))
-
-		if i == ringsize-1 {
-			C[0] = new(big.Int).SetBytes(CI[:])
-		} else {
-			C[i+1] = new(big.Int).SetBytes(CI[:])
+// GetCurveName returns curve name of the curve instace.
+func GetCurveName(curve elliptic.Curve) string {
+	for name, fncCurve := range CurveCodes {
+		if fncCurve() == curve {
+			return name
 		}
 	}
+	return ""
+}
 
-	return bytes.Equal(sig.C.Bytes(), C[0].Bytes())
+// GetHasherName returns name of hash function.
+func GetHasherName(fnc func() hash.Hash) string {
+	refFnc := reflect.ValueOf(fnc)
+	for name, fncHash := range HashCodes {
+		if reflect.ValueOf(fncHash) == refFnc {
+			return name
+		}
+	}
+	return ""
 }

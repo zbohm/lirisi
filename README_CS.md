@@ -1,36 +1,30 @@
-[![Build Status](https://travis-ci.org/zbohm/lirisi.svg?branch=master)](https://travis-ci.org/zbohm/lirisi)
-[![Report Card](http://goreportcard.com/badge/zbohm/lirisi)](http://goreportcard.com/report/zbohm/lirisi)
-[![GoDoc](https://godoc.org/github.com/zbohm/lirisi?status.svg)](https://godoc.org/github.com/zbohm/lirisi)
+# Jednoznačný kruhový podpis
+
+Projekt `Lirisi` implementuje schéma kruhového podpisu podle návrhu v dokumentu [Linkable Spontaneous Anonymous Group Signature for Ad Hoc Groups](LSAGS-027.pdf), který v roce 2004 sepsali Joseph K. Liu, Victor K. Wei a Duncan S. Wong.
+
+## Anonymita, jednoznačnost, rovnost
+
+Schéma definuje postup, jak vytvořit a ověřit elektronický podpis, který splňuje tři základní požadavky: anonymitu, jednoznačnost a rovnost.
+**Anonymita** znamená, že z podpisu nelze zjistit, kdo konkrétně ze skupiny podepisujích jej vytvořil.
+**Jednoznačnost** znamená, že z podpisu lze vyčíst, jestli již existuje jiný podpis podepsaný stejným podepisujícím, a to i přesto, že samotný podepisující tím není vyzrazen.
+**Rovnost** znamená, že nikdo ze skupiny podepisujících není v podpisu nadřazený. Na rozdíl od skupinového podpisu, kde existuje „správce skupiny“, který zná identitu podepisujícíh, v kruhovém podpisu si jsou všichni rovni.
 
 
-# Linkable Ring Signature
+Tyto vlastnosti umožňují použít podpis všude tam, kde je žádoucí zachovat anonymitu podepisujících. Například u elektronických voleb. Volič podepíše vybranou kandidátku, aniž by prozradil svou identitu. Volič může uplatnit jen jeden podpis, protože ty mají jednoznačný identifikátor a tak lze dohledat případné duplikáty.
 
-The project `Lirisi` implements a ring signature scheme according to the design in the document
-[Linkable Spontaneous Anonymous Group Signature for Ad Hoc Groups](LSAGS-027.pdf),
-written by Joseph K. Liu, Victor K. Wei and Duncan S. Wong in 2004.
+## Důvěryhodnost, otevřenost, decentralizace
 
-## Anonymity, Linkability, Spontaneity
+**Důvěryhodnost** podpisu je založena na asymetrické kryptografii. Při ní podepisující vlastní vždy pár klíčů - soukromý klíč a veřejný klíč. Se soukromým klíčem se podpis vytváří. Jen vlastník soukromého klíče může podpis vytvořit. Soukromý klíč tak nesmí být nikdy prozrazen. Naproti tomu veřejný klíč musí být předán všem k dispozici. Jen s pomocí veřejného klíče lze ověřit, že podpis je platný.
+**Otevřenost** systému je zajištěna tak, že všechny údaje, kromě soukromých klíčů, jsou všem k dispozici - veřejné klíče podepisujích (voličů), dokumenty k podepsání (volební kandidátky) a podpisy. Kdokoliv si tak kdykoliv může ověřit, že kandidátky jsou podepsány daným seznamem veřejných klíčů a že tyto podpisy jsou platné. Systém tak nelze napadnout (hacknout), protože není žádný údaj, který by šel zmanipulovat, nebo tajemství, které by šlo vyzradit.
+**Decentralizace** znamená, že nemusí nutně existovat centrální místo, na kterém se všechna data nachází. Data mohou být na více místech. Na jejich umístění nezáleží, protože jejich platnost si kdokoliv a kdykoliv může ověřit. Takto koncipovaný systém nelze vyřadit z činnosti, například útokem DDos.
 
-The scheme defines the procedure for creating and verifying an electronic signature that meets three basic requirements: anonymity, linkability and spontaneity.
-**Anonymity** means that it is not possible to find out from the signature who specifically created it from the group of signatories.
-**Linkability** means that it is possible to read from the signature whether another signature signed by the same signatory already exists, even though the signatory himself is not disclosed by it.
-**Spontaneity** means that no one in the group of signatories is superior in the signature. Unlike a group signature, where there is a "group manager" who knows the identity of the signatories, in a circular signature, everyone is equal.
+## Kryptografie nad eliptickými křivkami
 
-These features allow you to use a signature wherever it is desired to maintain the anonymity of the signers. For example, in electronic elections. The voter signs the selected candidate without revealing his / her identity. The voter can use only one signature, because they have a unique identifier and so any duplicates can be traced.
+Pro sestavení podpisu se využívá [kryptografie eliptických křivek](https://cs.wikipedia.org/wiki/Kryptografie_nad_eliptickými_křivkami) (ECC), což je metoda [šifrování veřejných klíčů](https://cs.wikipedia.org/wiki/Asymetrická_kryptografie) založená na [algebraických strukturách](https://cs.wikipedia.org/wiki/Algebraická_struktura) [eliptických křivek](https://cs.wikipedia.org/wiki/Eliptická_křivka) nad [konečnými tělesy](https://cs.wikipedia.org/wiki/Konečné_těleso). K dispozici je několik typů křivek. Dále se při podpisu využívá [hashovací funkce](https://cs.wikipedia.org/wiki/Hašovací_funkce).
 
-## Credibility, Openness, Decentralization
+Typy křivek, které lze při podpisu použít:
 
-**Credibility** of the signature is based on asymmetric crytography. The signer always owns a pair of keys - a private key and a public key. A signature is created with the private key. Only the private key owner can create a signature. The private key must never be revealed. In contrast, the public key must be made available to everyone. Only with the help of a public key can it be verified that the signature is valid.
-**The openness** of the system is ensured so that all data, except private keys, are available to everyone - public keys of signers (voters), documents to be signed (election candidates) and signatures. Thus, anyone can verify at any time that the candidates are signed with a given list of public keys and that these signatures are valid. The system cannot be attacked (hacked), because there is no data that can be manipulated or a secret that can be revealed.
-**Decentralization** means that there does not necessarily have to be a central location where all data is located. Data can be in multiple places. Their location does not matter, because their validity can be verified by anyone at any time. A system designed in this way cannot be deactivated, for example by a DDos attack.
-
-## Cryptography over elliptic curves
-
-[Elliptic curve cryptography](https://en.wikipedia.org/wiki/Elliptic-curve_cryptography) (ECC) is used to compile the signature, which is a method of [public key encryption](https://en.wikipedia.org/wiki/Public-key_cryptography) based on [algebraic structures](https://en.wikipedia.org/wiki/Algebraic_structure) of [elliptic curves](https://en.wikipedia.org/wiki/Elliptic_curve) over [finite fields](https://en.wikipedia.org/wiki/Finite_field). There are several types of curves. Furthermore, the hash function is used when signing.
-
-Types of curves that can be used for signing:
-
-| Name           | [OID](https://en.wikipedia.org/wiki/Object_identifier) | Description |
+| Název           | [OID](https://cs.wikipedia.org/wiki/Identifikátor_objektu) | Popis  |
 | --------------- | --------------------- | ------------------------------------------- |
 | prime256v1      | 1.2.840.10045.3.1.7   | X9.62/SECG curve over a 256 bit prime field |
 | secp224r1       | 1.3.132.0.33          | NIST/SECG curve over a 224 bit prime field  |
@@ -44,47 +38,50 @@ Types of curves that can be used for signing:
 | brainpoolP512r1 | 1.3.36.3.3.2.8.1.1.13 | RFC 5639 curve over a 512 bit prime field   |
 | brainpoolP512t1 | 1.3.36.3.3.2.8.1.1.14 | RFC 5639 curve over a 512 bit prime field   |
 
-Types of hash functions used when signing:
 
-| Name      | [OID](http://www.oid-info.com/index.htm) | Description                              |
+Typy hašovacích funkcí, které se při podpisu používají:
+
+| Název     | [OID](http://www.oid-info.com/index.htm) | Popis                                    |
 | --------- | ----------------------- | --------------------------------------------------------- |
-| sha3-224* | 2.16.840.1.101.3.4.2.7  | [SHA3](https://en.wikipedia.org/wiki/SHA-3)-224 algorithm |
+| sha3-224* | 2.16.840.1.101.3.4.2.7  | [SHA3](https://cs.wikipedia.org/wiki/SHA-3)-224 algorithm |
 | sha3-256* | 2.16.840.1.101.3.4.2.8  | SHA3-256 algorithm |
 | sha3-384  | 2.16.840.1.101.3.4.2.9  | SHA3-384 algorithm |
 | sha3-512  | 2.16.840.1.101.3.4.2.10 | SHA3-512 algorithm |
 
-*) Only the `sha3-224` or `sha3-256` hash can be used for the `secp256k1` curve. See [ScalarBaseMult can't handle scalars > 256 bits](https://github.com/ethereum/go-ethereum/blob/v1.9.25/crypto/secp256k1/curve.go#L249).
+*) Pro křivku `secp256k1` lze použít pouze hash `sha3-224` nebo `sha3-256`. Viz [ScalarBaseMult can't handle scalars > 256 bits](https://github.com/ethereum/go-ethereum/blob/v1.9.25/crypto/secp256k1/curve.go#L249).
 
-## Implementation
 
-The `Lirisi` project is written in [Go](https://golang.org/) as a library for use by other applications. The project includes wrappers for [Python](https://www.python.org/) and [Node.js](https://nodejs.org/).
+## Implementace
 
-## Use of the project
+Projekt `Lirisi` je napsán v jazyce [Go](https://golang.org/) jako knihovna určená pro používání z jiných aplikací.
+Součástí projektu jsou wrappery pro jazyky [Python](https://www.python.org/) a [Node.js](https://nodejs.org/).
+
+## Použití projektu
 
 ```diff
-- Warning: The project is in development.
-- For use in production, it is recommended to wait for the first release of version 1.0.0.
+- Upozornění: Projekt je ve vývoji. S použitím na produkci se doporučuje počkat na první vydání verze 1.0.0.
 ```
 
-The project is conceived primarily as a library. It is not intended for the average user. It is expected that there will be client applications (frontends) for "end" users who will use it. The project does not address the registration of participants, the creation of keys or their distribution and verification. Nevertheless, the project also includes a simple console application for the [command line](https://en.wikipedia.org/wiki/Unix_shell). Through it, it is possible to test the entire functionality of the library. Developers in Python or Node.js can test the library via ready-made wrappers.
+Projekt je koncipován primárně jako knihovna. Není určen pro běžného uživatele. Očekává se, že budou existovat klientské aplikace (frontendy) pro „koncové“ uživatele, které jej budou používat. Projekt nijak neřeší registraci účastníků, vytváření klíčů nebo jejich distribuci a ověřování. Přesto je součástí projektu i jednoduchá konzolová aplikace pro [příkazovou řádku](https://cs.wikipedia.org/wiki/Unixový_shell). Přes ni je možné celou funkcionalitu knihovny vyzkoušet. Vývojáři v Pythonu nebo v Node.js mohou knihovnu zkoušet přes připravené wrappery.
 
-## Installation
+## Instalace
 
-To install the project, you must first have the `Go` language installed on your system. Install it from the [Go Downloads](https://golang.org/dl/). After that, the project is installed with the `go get` command:
+Pro nainstalování projektu je potřeba nejprve mít v systému nainstalován jazyk `Go`. Instalujte jej ze stránky [Go Downloads](https://golang.org/dl/). Po té se projekt nainstaluje příkazem `go get`:
 
 ```
 $ go get github.com/zbohm/lirisi
 ```
 
-Those who do not want to install the `Go` language can download ready-made binaries compiled for operating systems:
+Ti, kteří nechtějí instalovat jazyk `Go`, si mohou stáhnout připravené binárky, zkompilované pro operační systémy:
 
-  * [lirisi.exe](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi.exe) for Windows amd64
-  * [lirisi_mac](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi_mac) for Apple (Darwin) amd64
-  * [lirisi](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi.exe) for Linux amd64
+  * [lirisi.exe](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi.exe) pro Windows amd64
+  * [lirisi_mac](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi_mac) pro Apple (Darwin) amd64
+  * [lirisi](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi) pro Linux amd64
 
-## Description of using the application on the command line
 
-The application is called with the command `lirisi`:
+## Popis použití aplikace na příkazové řádce
+
+Aplikace se volá příkazem `lirisi`:
 
 ```
 $ lirisi
@@ -110,29 +107,29 @@ Type "lirisi help COMMAND" for a specific command help. E.g. "lirisi help fold-p
 For more see https://github.com/zbohm/lirisi.
 ```
 
-### Selection of elliptic curve type and hash function
+### Výběr typu eliptické křivky a hašovací funkce
 
-The signatory group first agrees on the type of elliptical curve to use. For example, `prime256v1`. It also determines the type of hash function, such as `sha3-256`. Both of these values are set by default for `lirisi`, so they do not have to be specified in its commands.
+Skupina podepisujícíh se nejprve dohodne na typu eliptické křivky, kterou bude používat. Například `prime256v1`. Dále určí typ hašovací funkce, například `sha3-256`. Obě tyto hodnoty má aplikace `lirisi` nastaveny jako výchozí, takže se nemusí v jejích příkazech zadávat.
 
-### Private and public key + public keys of others
+### Soukromý a veřejný klič + veřejné klíče ostatních
 
-First, each participant creates their own private and public key pair. This can be done, for example, through the [openssl](https://www.openssl.org/) application.
+Nejdříve si každý účastník vytvoří svůj pár soukromého a veřejného klíče. To může provést například přes aplikaci [openssl](https://www.openssl.org/).
 
-Creating a private key:
+Vytvoření soukromého klíče:
 
 ```
 $ openssl ecparam -name prime256v1 -genkey -noout -out my-private-key.pem
 ```
 
-Creating a public key:
+Vytvoření veřejného klíče:
 
 ```
 $ openssl ec -in my-private-key.pem -pubout -out my-public-key.pem
 ```
 
-For a ring signature, it is necessary to have the public keys of all other participants in the signature. After each participant creates their own key pair, the public participant sends it to everyone else or uploads it to some common repository from which the others download it. In the example, we will simulate the download of public keys to the `public-keys` folder.
+Pro kruhový podpis je nezbytné mít k dispozici i veřejné klíče všech ostatních účastníků podpisu. Po té, co si každý účastník vytvoří svůj pár klíčů, pošle ten veřejný všem ostatním nebo jej nahraje do nějakého společného úložiště, ze kterého si jej ostatní stáhnou. V ukázce budeme simulovat stažení veřejných klíčů do složky `public-keys`.
 
-Create public keys into the folder `public-keys` as if they were downloaded from the repository or passed on in another way.
+Vytvoření veřejných klíčů do složky `public-keys`, jako kdyby byly stažené z úložiště nebo předané jiným způsobem.
 
 ```
 $ mkdir public-keys
@@ -141,13 +138,14 @@ do
   openssl ecparam -name prime256v1 -genkey -noout | openssl ec -in - -pubout -out public-keys/$name.pem
 done
 ```
-We will also add our own to public keys:
+
+K veřejným klíčům přidáme i svůj:
 
 ```
 $ cp my-public-key.pem public-keys
 ```
 
-We have a private key `my-private-key.pem` and a folder` public-keys` with all public keys, including our:
+Máme připraven soukromý klíč `my-private-key.pem` a složku `public-keys` se všemi veřejnými klíči, včetně našeho:
 
 ```
 $ ls public-keys
@@ -155,7 +153,7 @@ $ ls public-keys
 Alice.pem  Bob.pem  Carol.pem  Dave.pem  Eve.pem  Frank.pem  George.pem  Helen.pem  Iva.pem  my-public-key.pem
 ```
 
-The private key looks like this:
+Soukromý klíč vypadá takto:
 
 ```
 $ cat my-private-key.pem
@@ -167,7 +165,7 @@ AwEHoUQDQgAEa4WDUK4DCPMpNp5Wvmz+HZJ1thabxIv6Q/a68YxE58Lxd8HoQ2JF
 -----END EC PRIVATE KEY-----
 ```
 
-The public key then looks like this:
+Veřejný klíč pak vypadá takto:
 
 ```
 $ cat my-public-key.pem
@@ -178,19 +176,20 @@ xIv6Q/a68YxE58Lxd8HoQ2JF7EX7pueGfeeQKznhzF25P8Qfe7SBs52LRw==
 -----END PUBLIC KEY-----
 ```
 
-### Creating a public keys file
 
-Before signing, a public key file must first be created. The resulting key file is much smaller than simply merging its contents, because the values ​​are stored in it in a compressed form. In addition, values ​​common to all, such as the type of curve used, are stored in it only once. The key file is thus the smallest possible size. This is especially important in the case of a large number of signatories. Not everyone has to hand over all public keys. All one needs to do is create this key file and share it with the others. Each participant will receive only one file in which he has all the public keys. Here, however, there is a risk of other keys being spoofed, so each such key file has its own unique fingerprint, according to which everyone can verify that the file actually contains the signer's keys. The authentication method is described below in the chapter [Restore keys from the list](#restore-keys).
+### Vytvoření souboru s veřejnými klíči
 
-Another important askept of the list of keys is that **the order of the keys matters!** The unambiguity of the signature is derived from the public keys and their order. It is therefore necessary to agree on the order or to determine it in some way. The `lirisi` application implements a special sorting method that is always completely unambiguous, but still unpredictable - it cannot be inferred in advance. Therefore, none of the participants can influence the order. The method is described in detail below in the chapter [Sort keys by fingerprints](#sort-keys).
+Před samotným podpisem se nejdříve musí vytvořit soubor s veřejnými klíči. Výsledný soubor s klíči je mnohem menší než prosté sloučení jejich obsahu, protože hodnoty se do něj ukládají v komprimované podobě. Navíc hodnoty společné pro všechny, jako je typ použité křivky, se do něj uloží jen jednou. Soubor s klíči tak má nejmenší možnou velikost. To má význam hlavně v případě velkého množství podepisujících. Nemusí si všichni předávat všechny veřejné klíče. Stačí, aby jeden z nich vytvořil tento soubor s klíči a nasdílel jej ostatním. Každý z účastníků obdrží jen jeden soubor, ve kterém má všechny veřejné klíče. Zde ovšem hrozí nebezpečí podvržení jiných klíčů, proto má každý takový soubor s klíči svůj unikátní otisk, podle kterého si každý může ověřit, že soubor skutečně obsahuje klíče podepisujících. Způsob ověření je popsán níže v kapitole [Obnova klíčů ze seznamu](#obnova-klicu).
 
-The public key file is created with the `fold-pub` command:
+Další důležitý aspekt seznamu klíčů je ten, že **na pořadí klíčů záleží!** Jednoznačnost podpisu se odvozuje právě z veřejných klíčů a z jejich pořadí. Je proto nezbytné se na pořadí dohodnout nebo je nějak stanovit. Aplikace `lirisi` implementuje metodu speciálního řazení, které je vždy zcela jednoznačné, ale přesto nepredikovatelné - nelze jej nijak předem odvodit. Nikdo z účastníků tedy nemůže pořadí ovlivnit. Podrobně je metoda popsána níže v kapitole [Řazení klíčů podle otisků](#razeni-klicu-podle-otisku).
+
+Soubor s veřejnými klíči se vytváří příkazem `fold-pub`:
 
 ```
 $ lirisi fold-pub -inpath public-keys -out folded-public-keys.pem
 ```
 
-The resulting file looks like this:
+Výsledný soubor vypadá takto:
 
 ```
 $ cat folded-public-keys.pem
@@ -217,17 +216,17 @@ fHL/t4pupI67lrX3DEcd78nL
 -----END FOLDED PUBLIC KEYS-----
 ```
 
-### Creating a signature
+### Vytvoření podpisu
 
-The signature is created with the `sign` command. We can sign either a statement or a file.
+Podpis se vytváří příkazem `sign`. Můžeme podepsat buď nějaké prohlášení nebo soubor.
 
-Example of signing the text `Hello, world!`:
+Příklad podepsání textu `Hello, world!`:
 
 ```
 $ lirisi sign -message 'Hello, world!' -inpub folded-public-keys.pem -inkey my-private-key.pem -out signature.pem
 ```
 
-The following signature is created:
+Vznikne takovýto podpis:
 
 ```
 $ cat signature.pem
@@ -259,20 +258,20 @@ oaCs7cf7nqnfYLR64lP7PY/kX+7olHiw9gQgTu00L2HOz6BQ0+S5ODJ9dOWd7U8g
 -----END RING SIGNATURE-----
 ```
 
-If a document needs to be signed, its name will be specified in the `-message` parameter. For example: `-message ./path/document.pdf`.
+Pokud je potřeba podepsat nějaký dokument, tak se v parametru `-message` uvede jeho název. Například: `-message ./path/document.pdf`.
 
-#### Parameter `case` for distinguishing duplicate signatures
+#### Parametr `case` pro rozlišování duplicitních podpisů
 
-Recognition of duplicate signatures (uniqueness of the signer) is based on a comparison of the list of public keys. In order to be able to create more non-duplicate signatures when voting, you can set a value when signing via the `-case` parameter, which will prevent duplication for the given list. For example, this can be used for multi-round voting. Then the unambiguity will exist only for the given round and the participant can create one signature for each round:
+Rozpoznání duplicitních podpisů (jednoznačnost podepisujícího) je založeno na porovnání seznamu veřejných klíčů. Aby bylo možné při hlasování vytvořit více neduplicitních podpisů, tak lze při podepisování přes parametr `-case` nastavit nějakou hodnotu, která duplicitě pro daný seznam zabrání. Například se to může použít při vícekolovém hlasování. Pak bude jednoznačnost existovat jen pro dané kolo a účastník tak může vytvořit pro každé kolo jeden podpis:
 
 ```
-$ lirisi sign -message 'Hello, world!' -case 'The first round of voting' ...
-$ lirisi sign -message 'Hello, world!' -case 'Second round of voting' ...
+$ lirisi sign -message 'Hello, world!' -case 'První hlasovací kolo' ...
+$ lirisi sign -message 'Hello, world!' -case 'Druhé hlasovací kolo' ...
 ```
 
-### Ring signature verification
+### Ověření kruhového podpisu
 
-The signature is verified with the command `verify`:
+Podpis se ověřuje příkazem `verify`:
 
 ```
 $ lirisi verify -message 'Hello, world!' -inpub folded-public-keys.pem -in signature.pem
@@ -282,13 +281,14 @@ $ lirisi verify -message 'Hello, world?' -inpub folded-public-keys.pem -in signa
 Verification Failure
 ```
 
-### PEM and DER input / output formats
+### Vstupní/výstupní formáty PEM a DER
 
-The default format for the key file and signature is [PEM](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail). It is a text format, suitable for saving to a database, for example. In addition, the [DER](https://en.wikipedia.org/wiki/X.690#DER_encoding) binary file can be used. You set the format with the `-outform` parameter, for example: `-outform DER`. The private and public keys generated via `openssl` can also be stored in the `DER` format. The application recognizes it and can load it.
+Výchozí formát pro soubor s klíči a podpis je [PEM](https://cs.wikipedia.org/wiki/PEM). Je to textový formát, vhodný například pro ukládání do databáze. Kromě něj je možné použít i binární soubor [DER](https://cs.wikipedia.org/wiki/Basic_Encoding_Rules#Kódování_DER). Formát nastavíte parametrem `-outform`, například: `-outform DER`.
+Do formátu `DER` může být uložen i soukromý a veřejný klíč, vegenerovaný přes `openssl`. Apliakce jej rozpozná a umí jej načíst.
 
-### KeyImage value to determine the duplicity of the signer
+### Hodnota KeyImage pro určení duplicity podepisujícího
 
-The `KeyImage` value in the signature uniquely identifies the signer. It is a de facto anonymous unique identifier of the signer. It appears in `PEM` format after the name` KeyImage`:
+Hodnota `KeyImage` v podpisu určuje jednoznačně podepisujícího. Je to de facto anonymní unikátní identifikátor podepisujícího. Ve formátu `PEM` se zobrazuje za názvem `KeyImage`:
 
 ```
 $ cat signature.pem
@@ -301,7 +301,7 @@ KeyImage:
   ....
 ```
 
-However, this is just a simple text that could be falsified. A credible entry is read from the signature with the command `key-image`:
+To je ovšem jen prostý text, který by mohl být podvržen. Věrohodný údaj se z podpisu vyčte příkazem `key-image`:
 
 ```
 $ lirisi key-image -in signature.pem
@@ -309,7 +309,7 @@ $ lirisi key-image -in signature.pem
 1a3a56520ba220422bec8544eb6a3e2e290016...
 ```
 
-The value displayed in this way is difficult for human to read, so it is possible to add a delimiter to it via the `-c` parameter:
+Takto zobrazená hodnota je pro člověka špatně čitelná, proto je možné do ní přes parametr `-c` přidat oddělovač:
 
 ```
 $ lirisi key-image -c -in signature.pem
@@ -317,9 +317,9 @@ $ lirisi key-image -c -in signature.pem
 1a:3a:56:52:0b:a2:20:42:2b:ec:85:44:eb:6a:3e:2e:29:00:16...
 ```
 
-### Key list fingerprint
+### Otisk seznamu klíčů
 
-The key list also has its own unique fingerprint, which can be used to identify it. It appears after the name `Digest`:
+Seznam klíčů má také svůj jedinečný otisk, podle kterého je možné jej identifikovat. Zobrazuje se za názvem `Digest`:
 
 ```
 $ cat folded-public-keys.pem
@@ -330,7 +330,7 @@ Digest: 71:b2:97:72:3e:70:d9:94:87:35:eb:64:b0:6c:7f:05:b6:ec:33:1c:91:4a:8e:b2:
   ...
 ```
 
-As with the signature, however, this value is just plain text that could be underlined. A reliable entry is printed with the command `pub-dgst`:
+Stejně jako u podpisu, i tato hodnota je ovšem jen prostý text, který by mohl být podvržen. Věrohodný údaj se vypíše příkazem `pub-dgst`:
 
 ```
 $ lirisi pub-dgst -in folded-public-keys.pem
@@ -340,9 +340,9 @@ $ lirisi pub-dgst -c -in folded-public-keys.pem
 71:b2:97:72:3e:70:d9:94:87:35:eb:64:b0:6c:7f:05:b6:ec:33:1c:91:4a:8e:b2:d2:f0:66:16:2e:00:26:34
 ```
 
-### <a name="restore-keys">Restore keys from the list</a>
+### <a name="obnova-klicu">Obnova klíčů ze seznamu</a>
 
-If you suspect that the key list is manipulated or only when checking it, you can remove the keys from the list and restore them to the original separate files. Then each of them can be compared with the original key, if it is identical. To restore the keys, use the `restore-pub` command. The files are saved in the selected folder, for example `restored-keys`. The default format is `PEM`.
+Při podezření, že seznam klíčů je zmanipulován, je možné klíče ze seznamu vyjmout a obnovit je do původních samostatných souborů. Pak lze každý z nich porovat s původním klíčem, jestli je shodný. Obnova klíčů se provede příkazem `restore-pub`. Soubory se uloží do vybrané složky, například `restored-keys`. Výchozí formát je `PEM`.
 
 ```
 $ mkdir restore-pub
@@ -350,7 +350,7 @@ $ lirisi restore-pub --in folded-public-keys.pem -outpath restore-pub
 10 public keys saved into restore-pub.
 ```
 
-The original keys are stored in the `public-keys` folder. We find a match by comparing the contents of all the files in these two folders. Depending on the file names, this cannot be done because they are not saved to the list when merged.
+Původní klíče jsou ve složce `public-keys`. Shodu zjistíme porovnáním obsahů všech souborů v těchto dvou složkách. Podle jmen souborů to udělat nelze, neboť ty se při sloučení do seznamu neukládají.
 
 ```
 $ find public-keys -type f -exec md5sum {} + > dir1.txt
@@ -377,13 +377,11 @@ e0dfa849d907cc6f725bafc532111a9b restore-pub/public-key-06.pem public-keys/my-pu
 58e06bf36bea38092218f1aab548b38e restore-pub/public-key-09.pem public-keys/Dave.pem
 ```
 
+### <a name="razeni-klicu-podle-otisku">Řazení klíčů podle otisků</a>
 
+Pořadí veřejných klíčů je důležité, neboť se podle něj určují identifikátory podepisujících. Pravidlo pro určení pořadí klíčů musí být jednoznačné. Dále by mělo být co nejméně ovlivnitelné, aby nebylo možné pořadí nějak zmanipulovat. Příkaz `fold-pub` provádí ve výchozím nastavení setřídění klíčů podle otisků hodnot X, Y veřejných klíčů. Otisk pro řazení je opatřen hodnotu „salt“ vypočtenou ze seznamu otisků všech klíčů. Setřídit klíče tak lze pouze tehdy, pokud všechny existují.
 
-### <a name="sort-keys">Sort keys by fingerprints</a>
-
-The order of the public keys is important because it identifies the identifiers of the signers. The rule for determining the order of keys must be unambiguous. Furthermore, it should be as uncontrollable as possible so that it is not possible to manipulate the order in any way. By default, the `fold-pub` command sorts keys by fingerprints of the X, Y values of public keys. The sort fingerprint has a good "salt" calculated from the list of fingerprints of all keys. You can only sort keys if they all exist.
-
-The key file `folded-public-keys.pem` has the fingerprint` 71b297723e70d9948735 ... `
+Soubor s klíči `folded-public-keys.pem` má otisk `71b297723e70d9948735...`:
 
 ```
 $ cat folded-public-keys.pem
@@ -395,9 +393,9 @@ HasherName: sha3-256
   ...
 ```
 
-The fingerprint calculation can also be reproduced in [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)) on the [command line](https://en.wikipedia.org/wiki/Unix_shell). From the list of values `HasherName` we see that the hash function `sha3-256` was used. Therefore, we will use this function for fingerprint calculations.
+Výpočet otisku je možné zreprodukovat i v [Bash](https://cs.wikipedia.org/wiki/Bash) na [příkazovém řádku](https://cs.wikipedia.org/wiki/Unixový_shell). Z výpisu hodnoty `HasherName` vidíme, že byla použita hashovací funkce `sha3-256`. Proto pro výpočty otisků budeme používat tuto funkci.
 
-The X, Y values are the coordinates of the point on the elliptic curve. The public key consists of these two numbers. The bytes of these two numbers can be listed with the `pub-xy` command. Because these are binary data, we can interpret them on the console via the `hexdump` filter:
+Hodnoty X, Y jsou souřadnice bodu na eliptické křivce. Z těchto dvou čísel se skládá veřejný klíč. Bajty těchto dvou čísel lze vypsat příkazem `pub-xy`. Protože se jedná o binární data, tak si je na konzoli můžeme interpretovat přes filtr `hexdump`:
 
 ```
 $ lirisi pub-xy -in my-public-key.pem | hexdump -C
@@ -409,7 +407,7 @@ $ lirisi pub-xy -in my-public-key.pem | hexdump -C
 00000040  47                                                |G|
 ```
 
-The `openssl` program can only print the bytes of a public key from a private key. For a public key without knowing the private one, `pub-xy` or another utility must be used.
+Program `openssl` umí bajty veřejného klíče vypsat jen ze soukromého klíče. Pro veřejný klíč bez znalosti soukromého se musí použít `pub-xy` nebo jiná utilita.
 
 ```
 $ openssl ec -text -noout -in my-private-key.pem
@@ -430,14 +428,14 @@ ASN1 OID: prime256v1
 NIST CURVE: P-256
 ```
 
-From these two listings, you can verify the match - that these are indeed public key bytes:
+Z těchto dvou výpisů můžete ověřit shodu - že se opravdu jedná o bajty veřejného klíče:
 
 ```
 00000000  04 6b 85 83 50 ae 03 08  f3 29 36 9e 56 be 6c fe  |.k..P....)6.V.l.|
 pub:      04:6b:85:83:50:ae:03:08: f3:29:36:9e:56:be:6c:fe:
 ```
 
-So we will create a list with public key prints and sort it according to them:
+Vytvoříme tedy seznam s otisky veřejných klíčů a setřídíme jej podle nich:
 
 ```
 $ for pkey in public-keys/*
@@ -448,15 +446,15 @@ done > public-keys-hashes.txt
 $ LC_ALL=C sort public-keys-hashes.txt > sorted-hashes.txt
 ```
 
-In the file `sorted-hashes.txt` we have a list from which we get a fingerprint, which we store in the variable `summary`:
+V souboru `sorted-hashes.txt` máme seznam, ze kterého získáme otisk, který uložíme do proměnné `summary`:
 
 ```
 $ summary=`openssl dgst -sha3-256 sorted-hashes.txt | awk '{print $2}'`
 ```
 
-We will use the value `summary` as" salt ". We'll associate it with the imprint of each key. From this combined value, we will create a new fingerprint. The keys are then sorted according to this new fingerprint.
+Hodnotu `summary` použijeme jako „salt“. Spojíme ji s otiskem každého klíče. Z takto spojené hodnoty vytvoříme nový otisk. Podle tohoto nového otisku se pak klíče setřídí.
 
-Creating new fingerprints with `summary` as" salt ":
+Vytvoření nových otisků se `summary` jako „salt“:
 
 ```
 $ while read code
@@ -466,21 +464,21 @@ do
 done < public-keys-hashes.txt > digests.txt
 ```
 
-Sort keys by new fingerprints and calculate the final fingerprint for compound keys:
+Setřídění klíčů podle nových otisků a výpočet finálního otisku pro složené klíče:
 
 ```
 $ LC_ALL=C sort digests.txt | awk '{print $2}' | openssl dgst -sha3-256 -c | awk '{print $2}'
 71:b2:97:72:3e:70:d9:94:87:35:eb:64:b0:6c:7f:05:b6:ec:33:1c:91:4a:8e:b2:d2:f0:66:16:2e:00:26:34
 ```
 
-This value corresponds to the `Digest` data in the key file and the extract from the` pub-dgst` command:
+Tato hodnota odpovídá údaji `Digest` v souboru s klíči a výpisu z příkazu `pub-dgst`:
 
 ```
 $ lirisi pub-dgst -c -in folded-public-keys.pem
 71:b2:97:72:3e:70:d9:94:87:35:eb:64:b0:6c:7f:05:b6:ec:33:1c:91:4a:8e:b2:d2:f0:66:16:2e:00:26:34
 ```
 
-### Sort keys by fingerprints
+### Setřídění klíčů podle jejich otisků
 
 ```
 $ for key in public-keys/*
@@ -505,7 +503,7 @@ Dave.pem
 Eve.pem
 ```
 
-The order of the keys corresponds to the list we obtained when [restoring the keys](#restore-keys).
+Pořadí klíčů odpovídá seznamu, který jsme získali při [obnově klíčů](#obnova-klicu):
 
 ```
 $ awk '{print $2 " " $3}' dir1.txt | sort | awk '{print $2}'
@@ -522,10 +520,10 @@ public-keys/Dave.pem
 public-keys/Eve.pem
 ```
 
-## Library
 
-Example of using a library in `Go`:
+## Knihovna
 
+Příklad použití knihovny v jazyce `Go`:
 
 ```go
 package main
@@ -712,32 +710,31 @@ func main() {
 }
 ```
 
-### Library for other programming languages
+### Knihovna pro jiné programovací jazyky
 
-The [lib/lirisilib.go](https://github.com/zbohm/lirisi/blob/master/lib/lirisilib.go) library is ready for use in other programming languages.
-
-You need to compile it with the `-buildmode = c-shared` switch. This will create a binary and a header file:
+Pro použití v jiných programovacích jazycích je připravena knihovna [lib/lirisilib.go](https://github.com/zbohm/lirisi/blob/master/lib/lirisilib.go).
+Je potřeba ji zkompilovat s přepínačem `-buildmode=c-shared`. Tím se vygeneruje binárka a hlavičkový soubor:
 
 ```
 $ go build -o wrappers/lirisilib.so -buildmode=c-shared lib/lirisilib.go
 ```
 
-`Lirisi` has wrappers ready for this library, for [Python](https://www.python.org/) (> = 3.5) and for [Node.js](https://nodejs.org/).
-
+Pro tuto knihovnu má `lirisi` připraveny wrappery, pro jazyk [Python](https://www.python.org/) (>=3.5) 
+a pro [Node.js](https://nodejs.org/).
 
 #### Python
 
-Wrapper for [Python](https://www.python.org/) (verze >= 3.5) is ready in folder `wrappers/python/lirisi/`.
-Before using it for the first time, copy the binary to it or refer to it in the symlink:
+Wrapper pro [Python](https://www.python.org/) (verze >= 3.5) je připraven ve složce `wrappers/python/lirisi/`.
+Před prvním použitím si do něj binárku zkopírujte nebo na ni odkažte v symlinku:
 
 ```
 $ ln -s ../../lirisilib.so wrappers/python/lirisi/lirisilib.so
 ```
 
-There is a usage example in the `example.py` file. It uses the `cryptography` module.
-If you do not have it installed, install it, eg via `pip install cryptography`.
+V souboru `example.py` je ukázka použití. Ta vyžaduje modul `cryptography`.
+Pokud jej nemáte nainstalován, tak si jej nainstalujte, např. přes `pip install cryptography`.
 
-Go to the `wrappers / python` folder and run the example:` python example.py`:
+Jděte do složky `wrappers/python` a spusťte ukázku: `python example.py`:
 
 ```python
 from typing import Callable, List
@@ -829,27 +826,27 @@ if __name__ == "__main__":
 
 #### Node.js
 
-Wrapper for [Node.js](https://nodejs.org/) is ready in folder `wrappers/nodejs/lirisi/`.
-Before using it for the first time, copy the binary to it or refer to it in the symlink:
+Wrapper pro [Node.js](https://nodejs.org/) je připraven ve složce `wrappers/nodejs/lirisi/`.
+Před prvním použitím si do něj binárku zkopírujte nebo na ni odkažte v symlinku:
 
 ```
 $ ln -s ../../lirisilib.so wrappers/nodejs/lirisi/lirisilib.so
 ```
 
-There is a usage example in the `example.js` file.
-Go to the `wrapper/nodejs` folder:
+V souboru `example.js` je ukázka použití.
+Jděte do složky `wrapper/nodejs`:
 
 ```
 $ cd wrappers/nodejs
 ```
 
-Before running for the first time, install the necessary packages:
+Před prvním spuštěním si nainstalujte potřebné balíky:
 
 ```
 $ npm install
 ```
 
-Note: If you get a `npm ERR! ref@1.3.5 install: node-gyp rebuild`, so try to update your OS:
+Poznámka: Pokud se vám při instalaci vypíše chyba `npm ERR! ref@1.3.5 install: node-gyp rebuild`, tak zkuste svůj OS zaktualizovat:
 
 ```
 npm install --global npm@latest
@@ -857,7 +854,7 @@ npm install --global node-gyp@latest
 npm config set node_gyp $(npm prefix -g)/lib/node_modules/node-gyp/bin/node-gyp.js
 ```
 
-You can now run the demo:
+Nyní již můžete spustit ukázku:
 
 ```
 $ node example.js
@@ -919,6 +916,6 @@ main()
 ```
 
 
-### License
+### Licence
 
-Viz [LICENSE](/LICENSE).
+Viz [LICENCE](/LICENSE).

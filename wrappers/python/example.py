@@ -1,124 +1,85 @@
-import random
+from typing import Callable, List
 
-from lirisi import (CreatePrivateKey, CreateRingOfPublicKeys, CreateSignature, GetKeyImage, GetPubKeyBytesSize,
-                    ExtractPublicKey, PEMtoSign, SignToPEM, ToBase64, ToHex, VerifySignature)
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 
-
-# ---------------------------------------
-# Create your private key.
-
-privateKey = CreatePrivateKey()
-print("Your private key:")
-print(ToHex(privateKey).decode())
-
-# Output:
-# 74aa6a01921f598a384b7c3896e9cf6264c207b1b8c045042b7ea58eef6f65b6
-
-# ---------------------------------------
-# Extract public key.
-
-publicKey = ExtractPublicKey(privateKey)
-print("\nYour public key:")
-print(ToBase64(publicKey).decode())
-
-# Output:
-# BLP66/E9HNhdao1p/7/Aw6V+8BLB0fiKRPL4MR/vJV+nEHdquzXpWThL+Hhpuqel/7R6HpuUEfIHoiNn4clmVB8=
-
-# ---------------------------------------
-# Create the ring of fake public keys.
-
-pubList = []
-ring = CreateRingOfPublicKeys(9)
-
-# Append your public key.
-ring += publicKey
-
-# Randomly shuffle list of public keys.
-size = GetPubKeyBytesSize()
-ringPubs = []
-for pos in range(int(len(ring) / size)):
-    i = pos * size
-    ringPubs.append(ring[i:i+size])
-random.shuffle(ringPubs)
-
-# Concat shuffled keys.
-ringPubKeys = []
-for chunk in ringPubs:
-    ringPubKeys.extend(chunk)
-
-# Prepare public keys for save.
-pubList = []
-for chunk in ringPubs:
-    pubList.append(ToBase64(chunk).decode())
-
-print("\nRing of public keys:")
-print('\n'.join(pubList))
-
-# Output:
-# BECA9qR+T+bePvJXVVYUA9GLYWfQ799/5EwlN6DH+VygPAZ3JtHxCPWpO3VdA9DALuids39Mb3/d1JYubU1cxg8=
-# BNoLhSi/zHveaI+fHSSGVjUwb6PInRIm7GO1k4hWkkXo9wHtpTwks+yzN7ZZzElTpqBUtfIMM1UtAdhlhQVUJ+4=
-# BJGTB+5MlE84LrQPDPr+7zVlGlnsF26QJkYKej4A3VFq8ilx5ZV1Gy4ZEM/F6Tn5LrzJ5Lw2I51eXOWGPu2AHbI=
-# BKjS6IXUBJ2wIDKxxhkKXfhBCUSCQB37wHjZK0WXQUHTnZCxCQqtggpRAlPkfXVjFBMTJZkTniTFDI/293A3yBk=
-# BB5dsoqdrTdqANzp7MRSZrhbLXF3V5AcIzfmy3/HaKSmGVzdpDw3dUUTWjz5z2ZKI/pWAZV0KJBveMV757Uxa7Q=
-# BGBtFDAteGv8atveX+0pn86cQXyCakn2pXlbszUup51wwrTH57DbzjlYfaowH4lk6++TnAaLpJNCDKI4SH67A/g=
-# BLP66/E9HNhdao1p/7/Aw6V+8BLB0fiKRPL4MR/vJV+nEHdquzXpWThL+Hhpuqel/7R6HpuUEfIHoiNn4clmVB8=
-# BIplYHkY1EqeTCmsoieGiNVc2wBTVPcQSmb/tGVRg4fjy0ZClWPzdaXW2N2wHI4vVj453RpdG2+QzZmjTuaaDNk=
-# BIBjSmlHDqmfLuI9AMw6+yUg+ms0ctRc0u35tadiDzIT0jKDotTLXm2JTdpiKDzoJJDY0Zw/z3D6Jgx/UVCMgwE=
-# BPOnZeQoVH/nvDsL4I/NXUtAbabiGbh6k3atTpMyxgmXQWTNc4TQKiFGvbh3E0JzQqzjHV3n+UxGbr7oTio3HFs=
+from lirisi import (CreateSignature, FoldPublicKeys, LirisiException,
+                    PublicKeysDigest, PublicKeyXYCoordinates,
+                    SignatureKeyImage, UnfoldPublicKeys, VerifySignature)
 
 
-# ---------------------------------------
-# Prepare message to sign.
-# It is a list of bytes - bytearray.
-# message = [ord(c) for c in "Hello world!"]
-message = "Hello world!".encode()
+def createPublicKeyList(backend: Callable, curve: ec.EllipticCurve, size: int) -> List[bytes]:
+    public_keys_pem = []
+    for i in range(size):
+        private_key = ec.generate_private_key(curve, backend)
+        public_key = private_key.public_key()
+        pem = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
+        public_keys_pem.append(pem)
+    return public_keys_pem
 
-# ---------------------------------------
-# Make signature.
-sign = CreateSignature(message, ringPubKeys, privateKey)
-pemBytes = SignToPEM(sign)
-print("\nSignature in PEM:")
-print(bytearray(pemBytes).decode())
 
-# Output:
-# -----BEGIN RING SIGNATURE-----
-# KeyImage: n3eMbqe1K+ngj0eKJ2+1so3uwwEIaie7HPCUKLc0/jutSM14cdqpRTZqvrgLw1Mfh8J0ylvqJI3DI52G8SmkpQ==
+def main():
+    backend = default_backend()
 
-# QklJQm9KOTNqRzZudFN2cDRJOUhpaWR2dGJLTjdzTUJDR29udXh6d2xDaTNOUDQ3
-# clVqTmVISGFxVVUyYXI2NEM4TlRINGZDZE1wYjZpU053eU9kaHZFcHBLV0xrTVR5
-# RXIzRkhiNVVkbnkxM3Y4NkEyZE5LU1hna282RDhMYXNxTExNRHBOaG1kZTdzT2Rs
-# VHo1M1E3eXNhMUFZeUc4SENQUmsreWR0YldYSmRINFdCMjlMdEhpazc2My90WjJW
-# Y0NZVUgvMmh2NnZFL0tlSzhOdHIybFZnMkcrOTExWHdLd3ZSZUFNdkppOEo0dGJB
-# V1l2NXhYallOZVZuN2lZc24zU1ZMYU5RNmFZcHppcjRDSkpXUFNHa3dIMkpXeHp1
-# Q3NPTlNlclo5R0JqdkdNdlZZYTNXSnNhdHpESWR4QjlKQ0tQUHlzSFJTWkZUam9a
-# djBia1JldlBGSGwzbExuVUZ3akRVMGlwTGVBTm1RVnNwR2svaW5ZdUJyTFpFQVQr
-# aUZoTkRvVlFKVDF3cElKWER6Q0hSWFphUElRaDgyL2hGZGZFb0tRdmg1Q01YWG90
-# TEdNUE5JVnU2M0RjMTNlM0Q1aU5SKzZ2Kzd6Wm8yVUdwNTNSdStlbFRvdGdKaEVh
-# OGFKTWlQdVpOT3hnMithejNRb1k2UUtNMFZDZC8rNU9GTUt3aFBab1FXbHJ1aVFI
-# RCtxTU1ad2VuWUx0eW9JS1RNRjVsMVorQjNFTTl3bkg=
-# -----END RING SIGNATURE-----
+    # Choose curve type.
+    curve = ec.SECP256R1()
 
-# ---------------------------------------
-# Load signature bytes from PEM.
-signFromPEM = PEMtoSign(pemBytes)
+    # Creating public keys as a simulation of keys supplied by other signers.
+    public_keys_pem = createPublicKeyList(backend, curve, 9)
 
-# ---------------------------------------
-# Verify signature.
-result = VerifySignature(message, ringPubKeys, signFromPEM)
-print("Result of verification (true):", result)
-# Output:
-# Result of verification (true): True
+    # Create your private key.
+    private_key = ec.generate_private_key(curve, backend)
+    private_key_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+    print(private_key_pem.decode())
 
-result = VerifySignature([ord(c) for c in "Hello fokls!"], ringPubKeys, signFromPEM)
-print("Invalid verification (false):", result)
-# Output:
-# Invalid verification (false): False
+    # Add your public key to other public keys.
+    public_key = private_key.public_key()
+    public_key_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
+    public_keys_pem.append(public_key_pem)
 
-# ---------------------------------------
-# Get KeyImage - unique private key identifier.
-keyImage = GetKeyImage(sign)
-print("\nYour private key image:")
-print(ToBase64(keyImage).decode())
-# Output:
-# Your private key image:
-# pOcgOuwHYPTT8Ofi/+rqlVM0jxntrlWh1aUqmssQptE+5a7pyA3kOs//gPySO2aVXR45VZVnxqI+aWXbhijZfg==
+    coordinates = PublicKeyXYCoordinates(public_key_pem)
+    print("Public key coordinates (bytes):\n", coordinates, "\n")
+
+    # Create the content of file with public keys.
+    foldedPublicKeys = FoldPublicKeys(public_keys_pem)
+    print(foldedPublicKeys.decode())
+
+    # Display fingerprint of public keys.
+    digest = PublicKeysDigest(foldedPublicKeys, True)
+    print("Public keys digest:", digest.decode())
+    print()
+
+    # Make signature.
+    signature = CreateSignature(foldedPublicKeys, private_key_pem, b'Hello, world!')
+    print(signature.decode())
+
+    # Verify signature.
+    if VerifySignature(foldedPublicKeys, signature, b'Hello, world!'):
+        print("Signature verified OK")
+    else:
+        print("Signature verification Failure")
+    print()
+
+    # Display Signer identifier KeyImage.
+    key_image = SignatureKeyImage(signature, True)
+    print("KeyImage:", key_image)
+    print()
+
+    unfolded_keys = UnfoldPublicKeys(foldedPublicKeys)
+    for pos, key in enumerate(unfolded_keys):
+        print("public-key-{:>02d}.pem".format(pos + 1))
+        print(key.decode())
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except LirisiException as err:
+        print(err)

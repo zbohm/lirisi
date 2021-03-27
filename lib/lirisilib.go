@@ -1,155 +1,79 @@
 package main
 
 import (
-	"bytes"
-	"crypto/ecdsa"
+	"C"
 	"encoding/binary"
-	"log"
 	"unsafe"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/zbohm/lirisi/ring"
+	"github.com/zbohm/lirisi/client"
 )
-
-import "C"
 
 // Compile this library for calling functions from other languages:
 // go build -o wrappers/lirisilib.so -buildmode=c-shared lib/lirisilib.go
 
 // bytesToPointer encode bytes into unsafe pointer
-func bytesToPointer(content []byte) unsafe.Pointer {
-	buff := make([]byte, 8)
-	binary.LittleEndian.PutUint64(buff, uint64(len(content)))
-	return C.CBytes(append(buff, content...))
+func bytesToPointer(status int, content []byte) unsafe.Pointer {
+	buff := make([]byte, 16)
+	binary.LittleEndian.PutUint64(buff, uint64(status))
+	binary.LittleEndian.PutUint64(buff[8:], uint64(len(content)))
+	buff = append(buff, content...)
+	return C.CBytes(buff)
 }
 
-// CreatePrivateKey create private key and returns bytes.
-//export CreatePrivateKey
-func CreatePrivateKey() unsafe.Pointer {
-	privKey, err := crypto.GenerateKey()
-	if err != nil {
-		panic(err)
+// arrayOfByteArraysToPointer encode array of byte arrays into unsafe pointer
+func arrayOfByteArraysToPointer(status int, contents [][]byte) unsafe.Pointer {
+	buff := make([]byte, 16)
+	binary.LittleEndian.PutUint64(buff, uint64(status))
+	binary.LittleEndian.PutUint64(buff[8:], uint64(len(contents)))
+	for _, item := range contents {
+		size := make([]byte, 8)
+		binary.LittleEndian.PutUint64(size, uint64(len(item)))
+		buff = append(buff, size...)
+		buff = append(buff, item...)
 	}
-	return bytesToPointer(crypto.FromECDSA(privKey))
+	return C.CBytes(buff)
 }
 
-// ExtractPublicKey extract public key from private key.
-//export ExtractPublicKey
-func ExtractPublicKey(privKeyBytes []byte) unsafe.Pointer {
-	privKey, err := crypto.ToECDSA(privKeyBytes)
-	if err != nil {
-		panic(err)
-	}
-	pubKey := privKey.Public().(*ecdsa.PublicKey)
-	data := crypto.FromECDSAPub(pubKey)
-	return bytesToPointer(data)
+// SignatureKeyImage outputs signature key image.
+//export SignatureKeyImage
+func SignatureKeyImage(content []byte, separator bool) unsafe.Pointer {
+	return bytesToPointer(client.SignatureKeyImage(content, separator))
 }
 
-// Lenth of bytes serialized public key.
-const pubKeyBytesSize = 65
-
-// GetPubKeyBytesSize returns the lenth of bytes serialized public key.
-//export GetPubKeyBytesSize
-func GetPubKeyBytesSize() int {
-	return pubKeyBytesSize
+// FoldPublicKeys folds public keys into one content.
+//export FoldPublicKeys
+func FoldPublicKeys(pubKeysContent [][]byte, hashName, outFormat, order string) unsafe.Pointer {
+	return bytesToPointer(client.FoldPublicKeys(pubKeysContent, hashName, outFormat, order))
 }
 
-// CreateRingOfPublicKeys creates the list of public keys for testing purposes.
-//export CreateRingOfPublicKeys
-func CreateRingOfPublicKeys(size int) unsafe.Pointer {
-	var buffer bytes.Buffer
-	for i := 0; i < size; i++ {
-		privkey, err := crypto.GenerateKey()
-		if err != nil {
-			log.Fatal(err)
-		}
-		pubKey := privkey.Public().(*ecdsa.PublicKey)
-		if nBytes, err := buffer.Write(crypto.FromECDSAPub(pubKey)); err != nil {
-			log.Fatal(err)
-		} else if nBytes != pubKeyBytesSize {
-			log.Fatal("unexpected public key length")
-		}
-	}
-	return bytesToPointer(buffer.Bytes())
-}
-
-// Recover ring of public keys.
-func recoverRing(pubKeysRing []byte) ring.PublicKeysList {
-	size := len(pubKeysRing) / pubKeyBytesSize
-	pubsRing := make(ring.PublicKeysList, size)
-	for i := 0; i < size; i++ {
-		n := i * pubKeyBytesSize
-		pubBytes := pubKeysRing[n : n+pubKeyBytesSize]
-		pub, err := crypto.UnmarshalPubkey(pubBytes)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pubsRing[i] = pub
-	}
-	return pubsRing
-}
-
-// CreateSignature creates the signature and save it to PEM.
+// CreateSignature creates signature.
 //export CreateSignature
-func CreateSignature(message, pubKeysRing, privKeyBytes []byte) unsafe.Pointer {
-	// Recover ring of public keys.
-	pubsRing := recoverRing(pubKeysRing)
-	// Reconstruct private key.
-	privKey, err := crypto.ToECDSA(privKeyBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-	sign, err := ring.CreateSign(message, pubsRing, privKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return bytesToPointer(sign.ToBytes())
+func CreateSignature(foldedPublicKeys, privateKeyContent, message, caseIdentifier []byte, outFormat string) unsafe.Pointer {
+	return bytesToPointer(client.CreateSignature(foldedPublicKeys, privateKeyContent, message, caseIdentifier, outFormat))
 }
 
-// VerifySignature verify signature.
+// VerifySignature verifies signature.
 //export VerifySignature
-func VerifySignature(message, pubKeysRing, signBytes []byte) bool {
-	// Recover ring of public keys.
-	pubsRing := recoverRing(pubKeysRing)
-	sign, err := ring.FromBytes(signBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return ring.VerifySign(sign, message, pubsRing)
+func VerifySignature(foldedPublicKeys, signature, message, caseIdentifier []byte) int {
+	return client.VerifySignature(foldedPublicKeys, signature, message, caseIdentifier)
 }
 
-// SignToPEM converts signature to PEM.
-//export SignToPEM
-func SignToPEM(data []byte) unsafe.Pointer {
-	sign, err := ring.FromBytes(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	pem, err := sign.ToPEM()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return bytesToPointer(pem)
+// UnfoldPublicKeys separates folded public keys into array of bytes.
+//export UnfoldPublicKeys
+func UnfoldPublicKeys(foldedPublicKeys []byte, outFormat string) unsafe.Pointer {
+	return arrayOfByteArraysToPointer(client.UnfoldPublicKeysIntoBytes(foldedPublicKeys, outFormat))
 }
 
-// PEMtoSign converts PEM bytes to bytes for signature.
-//export PEMtoSign
-func PEMtoSign(data []byte) unsafe.Pointer {
-	sign, err := ring.FromPEM(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return bytesToPointer(sign.ToBytes())
+// PublicKeysDigest returns digest of public keys.
+//export PublicKeysDigest
+func PublicKeysDigest(foldedPublicKeys []byte, separator bool) unsafe.Pointer {
+	return bytesToPointer(client.PublicKeysDigest(foldedPublicKeys, separator))
 }
 
-// GetKeyImage extract KeyImage from signature bytes.
-//export GetKeyImage
-func GetKeyImage(data []byte) unsafe.Pointer {
-	sign, err := ring.FromBytes(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return bytesToPointer(sign.ImageToBytes())
+// PublicKeyXYCoordinates returns X,Y coordinates of public key.
+//export PublicKeyXYCoordinates
+func PublicKeyXYCoordinates(pubicKey []byte) unsafe.Pointer {
+	return bytesToPointer(client.PublicKeyXYCoordinates(pubicKey))
 }
 
 func main() {}

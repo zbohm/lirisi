@@ -9,12 +9,7 @@
   "author": "Zdeněk Böhm <zdenek.bohm@nic.cz>",
   "license": "ISC",
   "dependencies": {
-    "convert-hex": "^0.1.0",
-    "ffi": "^2.3.0",
-    "lirisi": "file:lirisi",
-    "ref": "^1.3.5",
-    "ref-array": "^1.2.0",
-    "ref-struct": "^1.1.0",
-    "shuffle-array": "^1.0.1"
+    "eckles": "^1.4.1",
+    "lirisi": "file:lirisi"
   }
 }
