@@ -231,10 +231,10 @@ func decodePublicKeys(pubKeysContent [][]byte, hasher func() hash.Hash) (int, []
 	var hash string
 	var block *pem.Block
 
-	is_pem := regexp.MustCompile(`-+BEGIN PUBLIC KEY`)
+	isPEM := regexp.MustCompile(`-+BEGIN PUBLIC KEY`)
 
 	for _, content := range pubKeysContent {
-		if is_pem.Match(content) {
+		if isPEM.Match(content) {
 			block, _ = pem.Decode(content)
 			if block == nil {
 				return ring.DecodePEMFailure, identKeys, []byte{}

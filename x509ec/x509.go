@@ -27,7 +27,6 @@ type pkixPublicKey struct {
 	BitString asn1.BitString
 }
 
-
 // ParsePKIXPublicKey parses a public key in PKIX, ASN.1 DER form.
 // The encoded public key is a SubjectPublicKeyInfo structure
 // (see RFC 5280, Section 4.1).

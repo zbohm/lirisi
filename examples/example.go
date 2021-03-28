@@ -57,31 +57,31 @@ func baseExample(
 	}
 
 	// Encode signature to format DER.
-	status, signature_der := client.EncodeSignarureToDER(signature)
+	status, signatureDer := client.EncodeSignarureToDER(signature)
 	if status != ring.Success {
 		log.Fatal(ring.ErrorMessages[status])
 	}
-	fmt.Printf("Signature in DER:\n%s\n", hex.Dump(signature_der))
+	fmt.Printf("Signature in DER:\n%s\n", hex.Dump(signatureDer))
 
 	// Encode signature to format PEM.
-	status, signature_pem := client.EncodeSignarureToPEM(signature)
+	status, signaturePem := client.EncodeSignarureToPEM(signature)
 	if status != ring.Success {
 		log.Fatal(ring.ErrorMessages[status])
 	}
-	fmt.Printf("Signature in PEM:\n%s\n", signature_pem)
-	return signature_der, signature_pem
+	fmt.Printf("Signature in PEM:\n%s\n", signaturePem)
+	return signatureDer, signaturePem
 }
 
-func foldedKeysExample(privateKey *ecdsa.PrivateKey, foldedPublicKeys, signature_der, signature_pem, message, caseIdentifier []byte) {
+func foldedKeysExample(privateKey *ecdsa.PrivateKey, foldedPublicKeys, signatureDer, signaturePem, message, caseIdentifier []byte) {
 	// Verify signature in DER.
-	status := client.VerifySignature(foldedPublicKeys, signature_der, message, caseIdentifier)
+	status := client.VerifySignature(foldedPublicKeys, signatureDer, message, caseIdentifier)
 	if status == ring.Success {
 		fmt.Println("Signature in DER: Verified OK")
 	} else {
 		fmt.Println("Signature in DER: Verification Failure")
 	}
 	// Verify signature in PEM.
-	status = client.VerifySignature(foldedPublicKeys, signature_pem, message, caseIdentifier)
+	status = client.VerifySignature(foldedPublicKeys, signaturePem, message, caseIdentifier)
 	if status == ring.Success {
 		fmt.Println("Signature in PEM: Verified OK")
 	} else {
@@ -94,13 +94,13 @@ func foldedKeysExample(privateKey *ecdsa.PrivateKey, foldedPublicKeys, signature
 		log.Fatal(err)
 	}
 	// Make first signature in format DER.
-	status, signature_der = client.CreateSignature(foldedPublicKeys, privateKeyDer, message, caseIdentifier, "DER")
+	status, signatureDer = client.CreateSignature(foldedPublicKeys, privateKeyDer, message, caseIdentifier, "DER")
 	if status != ring.Success {
 		log.Fatal(ring.ErrorMessages[status])
 	}
-	fmt.Printf("Signature in DER Nr.2:\n\n%s\n", hex.Dump(signature_der))
+	fmt.Printf("Signature in DER Nr.2:\n\n%s\n", hex.Dump(signatureDer))
 	// Verify signature in DER.
-	status = client.VerifySignature(foldedPublicKeys, signature_der, message, caseIdentifier)
+	status = client.VerifySignature(foldedPublicKeys, signatureDer, message, caseIdentifier)
 	if status == ring.Success {
 		fmt.Println("Signature in DER Nr.2: Verified OK")
 	} else {
@@ -108,13 +108,13 @@ func foldedKeysExample(privateKey *ecdsa.PrivateKey, foldedPublicKeys, signature
 	}
 
 	// Make second signature in format PEM.
-	status, signature_pem = client.CreateSignature(foldedPublicKeys, privateKeyDer, message, caseIdentifier, "PEM")
+	status, signaturePem = client.CreateSignature(foldedPublicKeys, privateKeyDer, message, caseIdentifier, "PEM")
 	if status != ring.Success {
 		log.Fatal(ring.ErrorMessages[status])
 	}
-	fmt.Printf("Signature in PEM:\n\n%s\n", signature_pem)
+	fmt.Printf("Signature in PEM:\n\n%s\n", signaturePem)
 	// Verify signature in PEM.
-	status = client.VerifySignature(foldedPublicKeys, signature_pem, message, caseIdentifier)
+	status = client.VerifySignature(foldedPublicKeys, signaturePem, message, caseIdentifier)
 	if status == ring.Success {
 		fmt.Println("Signature in PEM Nr.2: Verified OK")
 	} else {
@@ -156,7 +156,7 @@ func main() {
 	message := []byte("Hello world!")
 	caseIdentifier := []byte("Round Nr.1")
 
-	signature_der, signature_pem := baseExample(curveType, hashFnc, privateKey, publicKeys, message, caseIdentifier)
+	signatureDer, signaturePem := baseExample(curveType, hashFnc, privateKey, publicKeys, message, caseIdentifier)
 
 	// Encode public keys to DER.
 	publicKeysDer := [][]byte{}
@@ -185,7 +185,7 @@ func main() {
 	}
 	fmt.Printf("Keys from DER:\n%s\n", foldedPublicKeysPEM)
 
-	foldedKeysExample(privateKey, foldedPublicKeys, signature_der, signature_pem, message, caseIdentifier)
+	foldedKeysExample(privateKey, foldedPublicKeys, signatureDer, signaturePem, message, caseIdentifier)
 
 	// Decompose folded public keys into files.
 	status, unfoldedPublicKeys := client.UnfoldPublicKeysIntoBytes(foldedPublicKeys, "PEM")

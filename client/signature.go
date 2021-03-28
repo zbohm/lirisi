@@ -60,9 +60,9 @@ func EncodeSignarureToDER(signature *ring.Signature) (int, []byte) {
 
 // EncodeSignarureToPEM encodes signature to PEM.
 func EncodeSignarureToPEM(signature *ring.Signature) (int, []byte) {
-	status, content_der := EncodeSignarureToDER(signature)
+	status, contentDer := EncodeSignarureToDER(signature)
 	if status != ring.Success {
-		return status, content_der
+		return status, contentDer
 	}
 	curveType, _ := ring.GetCurve(signature.CurveOID)
 	hashFnc, _ := ring.GetHasher(signature.HasherOID)
@@ -79,11 +79,11 @@ func EncodeSignarureToPEM(signature *ring.Signature) (int, []byte) {
 			// "KeyImage":     FormatDigest(hex.EncodeToString(signature.KeyImage.Bytes())),
 			"KeyImage": formatKeyImage(signature.KeyImage),
 		},
-		Bytes: content_der,
+		Bytes: contentDer,
 	}
 	var buff bytes.Buffer
 	if err := pem.Encode(&buff, block); err != nil {
-		return ring.EncodePEMFailed, content_der
+		return ring.EncodePEMFailed, contentDer
 	}
 	return ring.Success, buff.Bytes()
 }

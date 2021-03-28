@@ -2,8 +2,9 @@ package ring
 
 import (
 	"crypto/elliptic"
-	"github.com/keybase/go-crypto/brainpool"
 	"math/big"
+
+	"github.com/keybase/go-crypto/brainpool"
 )
 
 // Zinv values for brainpool R type
@@ -32,6 +33,8 @@ var BrainpoolZ = map[string]string{
 	"brainpoolP384r1": "41DFE8DD399331F7166A66076734A89CD0D2BCDB7D068E44E1F378F41ECBAE97D2D63DBC87BCCDDCCC5DA39E8589291C",
 	"brainpoolP512r1": "12EE58E6764838B69782136F0F2D3BA06E27695716054092E60A80BEDB212B64E585D90BCE13761F85C3F1D2A64E3BE8FEA2220F01EBA5EEB0F35DBD29D922AB",
 }
+
+// BrainpoolZinv inverzed Zinv.
 var BrainpoolZinv = map[string]Zinv{}
 
 // GetZinv returns values zinv2, zinv3 for given curve.

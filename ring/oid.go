@@ -3,17 +3,19 @@ package ring
 import (
 	"crypto/elliptic"
 	"encoding/asn1"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/keybase/go-crypto/brainpool"
-	"golang.org/x/crypto/sha3"
 	"hash"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/keybase/go-crypto/brainpool"
+	"golang.org/x/crypto/sha3"
 )
 
 // http://oidref.com/$OID
 
+// OIDHashers - Object identifier standardized by ITU.
 var OIDHashers = map[string]func() hash.Hash{
 	"2.16.840.1.101.3.4.2.7":  sha3.New224,
 	"2.16.840.1.101.3.4.2.8":  sha3.New256,
@@ -21,6 +23,7 @@ var OIDHashers = map[string]func() hash.Hash{
 	"2.16.840.1.101.3.4.2.10": sha3.New512,
 }
 
+// OIDCurves - Object identifier standardized by ITU.
 var OIDCurves = map[string]func() elliptic.Curve{
 	"1.3.132.0.33":          elliptic.P224,    // secp224r1 : NIST/SECG curve over a 224 bit prime field
 	"1.2.840.10045.3.1.7":   elliptic.P256,    // prime256v1 (secp256r1): X9.62/SECG curve over a 256 bit prime field

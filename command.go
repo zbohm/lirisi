@@ -37,8 +37,8 @@ Type "lirisi help COMMAND" for a specific command help. E.g. "lirisi help fold-p
 For more see https://github.com/zbohm/lirisi.`)
 }
 
-func printHelpCommand(command_name string) {
-	switch command_name {
+func printHelpCommand(commandName string) {
+	switch commandName {
 	case "fold-pub":
 		fmt.Println(`Command "fold-pub" folds public keys into one file.
 
