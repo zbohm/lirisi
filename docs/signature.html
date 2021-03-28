@@ -1,0 +1,339 @@
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>signature.go</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" media="all" href="lirisi.css" />
+  <link rel="stylesheet" media="all" href="gocco.css" />
+</head>
+<body>
+<header>
+    <h1><a href="index.html">Linkable Ring Signature</a></h1>
+    <div>Linkable Spontaneous Anonymous Group Signature for Ad Hoc Groups.</div>
+</header>
+<nav>
+  <a href='key_image.html'>Key image</a>
+  <a href='oid.html'>Oid</a>
+  <a href='public_keys.html'>Public keys</a>
+  <a href='signature_factory.html'>Signature factory</a>
+  <a href='signature.html'>Signature</a>
+</nav>
+  <div id="container">
+    <div id="background"></div>
+    
+    <table cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th class="docs">
+            <h1>
+                signature.go
+            </h1>
+          </th>
+          <th class="code">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+          
+          <tr id="section-1">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+                
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nx">ring</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&quot;crypto/elliptic&quot;</span>
+	<span class="s">&quot;encoding/asn1&quot;</span>
+	<span class="s">&quot;reflect&quot;</span>
+
+	<span class="s">&quot;hash&quot;</span>
+
+	<span class="s">&quot;github.com/ethereum/go-ethereum/crypto&quot;</span>
+	<span class="s">&quot;github.com/keybase/go-crypto/brainpool&quot;</span>
+	<span class="s">&quot;golang.org/x/crypto/sha3&quot;</span>
+<span class="p">)</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-2">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+                <p>Signature is struct with signature data.</p>
+
+<h2>Serialize to DER</h2>
+
+<pre><code>PointData DEFINITIONS ::= BEGIN
+		X := INTEGER
+		Y := INTEGER
+END
+
+Signature DEFINITIONS ::= BEGIN
+    Name       ::= OCTET STRING,
+    Version    ::= INTEGER,
+    CurveOID   ::= OBJECT IDENTIFIER,
+    HashOID    ::= OBJECT IDENTIFIER,
+    KeyImage   ::= PointData,
+    Checksum   ::= INTEGER,
+    Signatures ::= SEQUENCE OF INTEGER
+END
+</code></pre>
+
+<p>openssl asn1parse -i -dump -in signature.pem</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-3">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+                <p>PointData holds X,Y coordinates of point.
+<a href="https://tools.ietf.org/html/rfc5480#section-2.2">https://tools.ietf.org/html/rfc5480#section-2.2</a>
+ECPoint ::= OCTET STRING</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">type</span> <span class="nx">PointData</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">X</span> <span class="p">[]</span><span class="kt">byte</span>
+	<span class="nx">Y</span> <span class="p">[]</span><span class="kt">byte</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-4">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+                <p>Signature holds data of ring signature.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">type</span> <span class="nx">Signature</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>       <span class="kt">string</span>
+	<span class="nx">Version</span>    <span class="kt">int</span>
+	<span class="nx">CurveOID</span>   <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span>
+	<span class="nx">HasherOID</span>  <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span>
+	<span class="nx">KeyImage</span>   <span class="nx">PointData</span>
+	<span class="nx">Checksum</span>   <span class="p">[]</span><span class="kt">byte</span>
+	<span class="nx">Signatures</span> <span class="p">[][]</span><span class="kt">byte</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-5">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+                <p>FoldedPublicKeys holds data of points of public keys.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">type</span> <span class="nx">FoldedPublicKeys</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Name</span>      <span class="kt">string</span>
+	<span class="nx">CurveOID</span>  <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span>
+	<span class="nx">HasherOID</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span>
+	<span class="nx">Digest</span>    <span class="p">[]</span><span class="kt">byte</span>
+	<span class="nx">Keys</span>      <span class="p">[][]</span><span class="kt">byte</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-6">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+                <p>CurveCodes maps curve names to curves available to make signature.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">var</span> <span class="nx">CurveCodes</span> <span class="p">=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">func</span><span class="p">()</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">{</span>
+	<span class="s">&quot;secp224r1&quot;</span><span class="p">:</span>  <span class="nx">elliptic</span><span class="p">.</span><span class="nx">P224</span><span class="p">,</span> <span class="c1">// NIST/SECG curve over a 224 bit prime field</span>
+	<span class="s">&quot;prime256v1&quot;</span><span class="p">:</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">P256</span><span class="p">,</span> <span class="c1">// X9.62/SECG curve over a 256 bit prime field</span>
+	<span class="s">&quot;secp384r1&quot;</span><span class="p">:</span>  <span class="nx">elliptic</span><span class="p">.</span><span class="nx">P384</span><span class="p">,</span> <span class="c1">// NIST/SECG curve over a 384 bit prime field</span>
+	<span class="s">&quot;secp521r1&quot;</span><span class="p">:</span>  <span class="nx">elliptic</span><span class="p">.</span><span class="nx">P521</span><span class="p">,</span> <span class="c1">// NIST/SECG curve over a 521 bit prime field</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-7">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+                <p>x509.ParsePKIXPublicKey: unsupported elliptic curve</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="s">&quot;brainpoolP256r1&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P256r1</span><span class="p">,</span> <span class="c1">// RFC 5639 curve over a 256 bit prime field</span>
+	<span class="s">&quot;brainpoolP256t1&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P256t1</span><span class="p">,</span> <span class="c1">// RFC 5639 curve over a 256 bit prime field</span>
+	<span class="s">&quot;brainpoolP384r1&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P384r1</span><span class="p">,</span> <span class="c1">// RFC 5639 curve over a 384 bit prime field</span>
+	<span class="s">&quot;brainpoolP384t1&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P384t1</span><span class="p">,</span> <span class="c1">// RFC 5639 curve over a 384 bit prime field</span>
+	<span class="s">&quot;brainpoolP512r1&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P512r1</span><span class="p">,</span> <span class="c1">// RFC 5639 curve over a 512 bit prime field</span>
+	<span class="s">&quot;brainpoolP512t1&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P512t1</span><span class="p">,</span> <span class="c1">// RFC 5639 curve over a 512 bit prime field</span>
+	<span class="s">&quot;secp256k1&quot;</span><span class="p">:</span>       <span class="nx">crypto</span><span class="p">.</span><span class="nx">S256</span><span class="p">,</span>      <span class="c1">// SECG curve over a 256 bit prime field</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-8">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+                <p>HashCodes maps hash names to hash functions available to make signature.
+printf &ldquo;test&rdquo; | openssl dgst -sha3-256</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">var</span> <span class="nx">HashCodes</span> <span class="p">=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span><span class="p">{</span>
+	<span class="s">&quot;sha3-224&quot;</span><span class="p">:</span> <span class="nx">sha3</span><span class="p">.</span><span class="nx">New224</span><span class="p">,</span>
+	<span class="s">&quot;sha3-256&quot;</span><span class="p">:</span> <span class="nx">sha3</span><span class="p">.</span><span class="nx">New256</span><span class="p">,</span>
+	<span class="s">&quot;sha3-384&quot;</span><span class="p">:</span> <span class="nx">sha3</span><span class="p">.</span><span class="nx">New384</span><span class="p">,</span>
+	<span class="s">&quot;sha3-512&quot;</span><span class="p">:</span> <span class="nx">sha3</span><span class="p">.</span><span class="nx">New512</span><span class="p">,</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-9">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+                <p>Status codes for sign/verify functions.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">Origin</span>                            <span class="p">=</span> <span class="s">&quot;github.com/zbohm/lirisi&quot;</span>
+	<span class="nx">SignatureVersion</span>                  <span class="p">=</span> <span class="mi">1</span>
+	<span class="nx">Success</span>                           <span class="p">=</span> <span class="mi">0</span>
+	<span class="nx">PrivateKeyNotFitPublic</span>            <span class="p">=</span> <span class="mi">1</span>
+	<span class="nx">InsufficientNumberOfPublicKeys</span>    <span class="p">=</span> <span class="mi">2</span>
+	<span class="nx">PrivateKeyPositionOutOfRange</span>      <span class="p">=</span> <span class="mi">3</span>
+	<span class="nx">PrivateKeyNotFoundAmongPublicKeys</span> <span class="p">=</span> <span class="mi">4</span>
+	<span class="nx">UnexpectedCurveType</span>               <span class="p">=</span> <span class="mi">5</span>
+	<span class="nx">UnexpectedHashType</span>                <span class="p">=</span> <span class="mi">6</span>
+	<span class="nx">IncorrectNumberOfSignatures</span>       <span class="p">=</span> <span class="mi">7</span>
+	<span class="nx">InvalidKeyImage</span>                   <span class="p">=</span> <span class="mi">8</span>
+	<span class="nx">IncorrectChecksum</span>                 <span class="p">=</span> <span class="mi">9</span>
+	<span class="nx">OIDHasherNotFound</span>                 <span class="p">=</span> <span class="mi">10</span>
+	<span class="nx">OIDCurveNotFound</span>                  <span class="p">=</span> <span class="mi">11</span>
+	<span class="nx">UnsupportedCurveHashCombination</span>   <span class="p">=</span> <span class="mi">12</span>
+	<span class="nx">PointWasNotFound</span>                  <span class="p">=</span> <span class="mi">13</span>
+	<span class="nx">DecodePEMFailure</span>                  <span class="p">=</span> <span class="mi">14</span>
+	<span class="nx">UnexpectedRestOfSignature</span>         <span class="p">=</span> <span class="mi">15</span>
+	<span class="nx">Asn1MarshalFailed</span>                 <span class="p">=</span> <span class="mi">16</span>
+	<span class="nx">EncodePEMFailed</span>                   <span class="p">=</span> <span class="mi">17</span>
+	<span class="nx">InvalidPointCoordinates</span>           <span class="p">=</span> <span class="mi">18</span>
+	<span class="nx">NilPointCoordinates</span>               <span class="p">=</span> <span class="mi">19</span>
+	<span class="nx">ParseECPrivateKeyFailure</span>          <span class="p">=</span> <span class="mi">20</span>
+	<span class="nx">Asn1UnmarshalFailed</span>               <span class="p">=</span> <span class="mi">21</span>
+	<span class="nx">MarshalPKIXPublicKeyFailed</span>        <span class="p">=</span> <span class="mi">22</span>
+	<span class="nx">ParsePKIXPublicKeyFailed</span>          <span class="p">=</span> <span class="mi">23</span>
+<span class="p">)</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-10">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+                <p>ErrorMessages convert status codes to human readable error messages.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">var</span> <span class="nx">ErrorMessages</span> <span class="p">=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">int</span><span class="p">]</span><span class="kt">string</span><span class="p">{</span>
+	<span class="nx">PrivateKeyNotFitPublic</span><span class="p">:</span>            <span class="s">&quot;Private key not fit public.&quot;</span><span class="p">,</span>
+	<span class="nx">InsufficientNumberOfPublicKeys</span><span class="p">:</span>    <span class="s">&quot;Insufficient number of public keys.&quot;</span><span class="p">,</span>
+	<span class="nx">PrivateKeyPositionOutOfRange</span><span class="p">:</span>      <span class="s">&quot;Private key position out of range.&quot;</span><span class="p">,</span>
+	<span class="nx">PrivateKeyNotFoundAmongPublicKeys</span><span class="p">:</span> <span class="s">&quot;Private key not found among public keys.&quot;</span><span class="p">,</span>
+	<span class="nx">UnexpectedCurveType</span><span class="p">:</span>               <span class="s">&quot;Unexpected curve type.&quot;</span><span class="p">,</span>
+	<span class="nx">UnexpectedHashType</span><span class="p">:</span>                <span class="s">&quot;Unexpected hash type.&quot;</span><span class="p">,</span>
+	<span class="nx">IncorrectNumberOfSignatures</span><span class="p">:</span>       <span class="s">&quot;Incorrect number of signatures.&quot;</span><span class="p">,</span>
+	<span class="nx">InvalidKeyImage</span><span class="p">:</span>                   <span class="s">&quot;Invalid key image.&quot;</span><span class="p">,</span>
+	<span class="nx">IncorrectChecksum</span><span class="p">:</span>                 <span class="s">&quot;Incorrect checksum.&quot;</span><span class="p">,</span>
+	<span class="nx">OIDHasherNotFound</span><span class="p">:</span>                 <span class="s">&quot;OID hasher not found.&quot;</span><span class="p">,</span>
+	<span class="nx">OIDCurveNotFound</span><span class="p">:</span>                  <span class="s">&quot;OID curve not found.&quot;</span><span class="p">,</span>
+	<span class="nx">UnsupportedCurveHashCombination</span><span class="p">:</span>   <span class="s">&quot;Unsupported curve hash combination.&quot;</span><span class="p">,</span>
+	<span class="nx">PointWasNotFound</span><span class="p">:</span>                  <span class="s">&quot;A point on the curve was not found. Please try another case identigier.&quot;</span><span class="p">,</span>
+	<span class="nx">DecodePEMFailure</span><span class="p">:</span>                  <span class="s">&quot;Decode PEM failed.&quot;</span><span class="p">,</span>
+	<span class="nx">UnexpectedRestOfSignature</span><span class="p">:</span>         <span class="s">&quot;Unexpected rest at the end of signature.&quot;</span><span class="p">,</span>
+	<span class="nx">Asn1MarshalFailed</span><span class="p">:</span>                 <span class="s">&quot;ASN1 Marshal failed.&quot;</span><span class="p">,</span>
+	<span class="nx">EncodePEMFailed</span><span class="p">:</span>                   <span class="s">&quot;PEM Encode failed.&quot;</span><span class="p">,</span>
+	<span class="nx">InvalidPointCoordinates</span><span class="p">:</span>           <span class="s">&quot;Invalid point coordinates.&quot;</span><span class="p">,</span>
+	<span class="nx">NilPointCoordinates</span><span class="p">:</span>               <span class="s">&quot;Nil point coordinates.&quot;</span><span class="p">,</span>
+	<span class="nx">ParseECPrivateKeyFailure</span><span class="p">:</span>          <span class="s">&quot;Parse EC private key failed.&quot;</span><span class="p">,</span>
+	<span class="nx">Asn1UnmarshalFailed</span><span class="p">:</span>               <span class="s">&quot;ASN1 Unmarshal Failed.&quot;</span><span class="p">,</span>
+	<span class="nx">MarshalPKIXPublicKeyFailed</span><span class="p">:</span>        <span class="s">&quot;Marshal PKIX public key falied.&quot;</span><span class="p">,</span>
+	<span class="nx">ParsePKIXPublicKeyFailed</span><span class="p">:</span>          <span class="s">&quot;Parse PKIX public key falied.&quot;</span><span class="p">,</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-11">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+                <p>GetCurveName returns curve name of the curve instace.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">GetCurveName</span><span class="p">(</span><span class="nx">curve</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="k">for</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">fncCurve</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">CurveCodes</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">fncCurve</span><span class="p">()</span> <span class="o">==</span> <span class="nx">curve</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">name</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="s">&quot;&quot;</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-12">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+                <p>GetHasherName returns name of hash function.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">GetHasherName</span><span class="p">(</span><span class="nx">fnc</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="nx">refFnc</span> <span class="o">:=</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">fnc</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">fncHash</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">HashCodes</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">fncHash</span><span class="p">)</span> <span class="o">==</span> <span class="nx">refFnc</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">name</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="s">&quot;&quot;</span>
+<span class="p">}</span>
+
+</pre></div>
+            </td>
+          </tr>
+          
+      </tbody>
+    </table>
+  </div>
+<footer>
+    <a href="https://github.com/zbohm/lirisi/">Lirisi</a>; Zdeněk Böhm.
+    <a href="https://en.wikipedia.org/wiki/Literate_programming">Literate programming</a>.
+</footer>
+</body>
+</html>

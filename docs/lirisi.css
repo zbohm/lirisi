@@ -1,0 +1,45 @@
+header, nav, footer {
+    font-family: sans-serif;
+}
+
+header {
+    color: #fff;
+    text-align: center;
+    background-color: #159957;
+    padding: 1em;
+}
+
+header a {
+    color: #fff;
+}
+
+header a:visited {
+    color: #f0f0f0;
+}
+
+nav {
+    display: flex;
+    padding: 0.6em;
+    background-color: #60f0a8;
+}
+
+nav a {
+    text-decoration: none;
+    padding: 0.2em 0.6em;
+    margin-right: 1em;
+}
+
+nav a:hover {
+    text-decoration: underline;
+    background-color: #159957;
+    color: #fff;
+}
+
+footer {
+    padding: 1em;
+    background-color: #dadada;
+}
+
+.page-content {
+    padding: 2em;
+}

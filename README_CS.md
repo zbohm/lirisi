@@ -915,6 +915,10 @@ const main = async () => {
 main()
 ```
 
+### Prohlížení kódu
+
+Některé zdrojové kódy ve stylu „Literate programming“ jsou k dispozici na https://zbohm.github.io/lirisi/. Popis implementace podpisu podle schematu je v sekci [4 A LSAG Signature Scheme](https://zbohm.github.io/lirisi/signature_factory.html#section-25).
+
 
 ### Licence
 

@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>key_image.go</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" media="all" href="lirisi.css" />
+  <link rel="stylesheet" media="all" href="gocco.css" />
+</head>
+<body>
+<header>
+    <h1><a href="index.html">Linkable Ring Signature</a></h1>
+    <div>Linkable Spontaneous Anonymous Group Signature for Ad Hoc Groups.</div>
+</header>
+<nav>
+  <a href='key_image.html'>Key image</a>
+  <a href='oid.html'>Oid</a>
+  <a href='public_keys.html'>Public keys</a>
+  <a href='signature_factory.html'>Signature factory</a>
+  <a href='signature.html'>Signature</a>
+</nav>
+  <div id="container">
+    <div id="background"></div>
+    
+    <table cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th class="docs">
+            <h1>
+                key_image.go
+            </h1>
+          </th>
+          <th class="code">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+          
+          <tr id="section-1">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+                
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nx">client</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&quot;bytes&quot;</span>
+	<span class="s">&quot;encoding/hex&quot;</span>
+	<span class="s">&quot;log&quot;</span>
+
+	<span class="s">&quot;github.com/zbohm/lirisi/ring&quot;</span>
+<span class="p">)</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-2">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+                <p>SignatureKeyImage outputs signature key image.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">SignatureKeyImage</span><span class="p">(</span><span class="nx">body</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">separator</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">status</span><span class="p">,</span> <span class="nx">sign</span> <span class="o">:=</span> <span class="nx">ParseSignature</span><span class="p">(</span><span class="nx">body</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">status</span> <span class="o">!=</span> <span class="nx">ring</span><span class="p">.</span><span class="nx">Success</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">status</span><span class="p">,</span> <span class="p">[]</span><span class="nb">byte</span><span class="p">(</span><span class="nx">ring</span><span class="p">.</span><span class="nx">ErrorMessages</span><span class="p">[</span><span class="nx">status</span><span class="p">])</span>
+	<span class="p">}</span>
+	<span class="nx">digest</span> <span class="o">:=</span> <span class="nx">sign</span><span class="p">.</span><span class="nx">KeyImage</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()</span>
+	<span class="nx">content</span> <span class="o">:=</span> <span class="nx">hex</span><span class="p">.</span><span class="nx">EncodeToString</span><span class="p">(</span><span class="nx">digest</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">separator</span> <span class="p">{</span>
+		<span class="nx">content</span> <span class="p">=</span> <span class="nx">FormatDigest</span><span class="p">(</span><span class="nx">content</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">ring</span><span class="p">.</span><span class="nx">Success</span><span class="p">,</span> <span class="p">[]</span><span class="nb">byte</span><span class="p">(</span><span class="nx">content</span><span class="p">)</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-3">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+                <p>formatKeyImage into more human readable form</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">formatKeyImage</span><span class="p">(</span><span class="nx">keyImage</span> <span class="nx">ring</span><span class="p">.</span><span class="nx">PointData</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="nx">line</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nx">keyImage</span><span class="p">.</span><span class="nx">X</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+	<span class="nx">buf</span> <span class="o">:=</span> <span class="nx">bytes</span><span class="p">.</span><span class="nx">NewBufferString</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">buf</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\n  &quot;</span> <span class="o">+</span> <span class="nx">FormatDigest</span><span class="p">(</span><span class="nx">hex</span><span class="p">.</span><span class="nx">EncodeToString</span><span class="p">(</span><span class="nx">keyImage</span><span class="p">.</span><span class="nx">X</span><span class="p">[:</span><span class="nx">line</span><span class="p">])));</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">buf</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\n  &quot;</span> <span class="o">+</span> <span class="nx">FormatDigest</span><span class="p">(</span><span class="nx">hex</span><span class="p">.</span><span class="nx">EncodeToString</span><span class="p">(</span><span class="nx">keyImage</span><span class="p">.</span><span class="nx">X</span><span class="p">[</span><span class="nx">line</span><span class="p">:])));</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">buf</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\n  &quot;</span> <span class="o">+</span> <span class="nx">FormatDigest</span><span class="p">(</span><span class="nx">hex</span><span class="p">.</span><span class="nx">EncodeToString</span><span class="p">(</span><span class="nx">keyImage</span><span class="p">.</span><span class="nx">Y</span><span class="p">[:</span><span class="nx">line</span><span class="p">])));</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">buf</span><span class="p">.</span><span class="nx">WriteString</span><span class="p">(</span><span class="s">&quot;\n  &quot;</span> <span class="o">+</span> <span class="nx">FormatDigest</span><span class="p">(</span><span class="nx">hex</span><span class="p">.</span><span class="nx">EncodeToString</span><span class="p">(</span><span class="nx">keyImage</span><span class="p">.</span><span class="nx">Y</span><span class="p">[</span><span class="nx">line</span><span class="p">:])));</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">log</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">buf</span><span class="p">.</span><span class="nx">String</span><span class="p">()</span>
+<span class="p">}</span>
+
+</pre></div>
+            </td>
+          </tr>
+          
+      </tbody>
+    </table>
+  </div>
+<footer>
+    <a href="https://github.com/zbohm/lirisi/">Lirisi</a>; Zdeněk Böhm.
+    <a href="https://en.wikipedia.org/wiki/Literate_programming">Literate programming</a>.
+</footer>
+</body>
+</html>

@@ -1,0 +1,33 @@
+#!/bin/bash
+echo "Add header, navigation and footer into the pages."
+
+echo "<nav>" > docs/nav.html
+
+for path in docsrc/*.html
+do
+    filename=`basename $path`
+    name=${filename%.*}
+    text=${name/_/ }
+    Label="${text^}"
+    echo "  <a href='$filename'>$Label</a>"
+done >> docs/nav.html
+
+echo "</nav>" >> docs/nav.html
+
+awk '
+    f{system("cat docs/header.html; cat docs/nav.html");f=0};/<body>/{f=1}
+    /<\/body>/ {system("cat docs/footer.html")}
+    {print}
+' docs/_index.html > docs/index.html
+
+for src in docsrc/*.html
+do
+    echo "   "$src
+    filename=`basename $src`
+    awk '
+        /<link rel="stylesheet" media="all" href="gocco.css" ?\/>/ {print "<link rel=\"stylesheet\" media=\"all\" href=\"lirisi.css\" />"}
+        f{system("cat docs/header.html; cat docs/nav.html");f=0};/<body>/{f=1}
+        /<\/body>/ {system("cat docs/footer.html")}
+        {print}
+    ' $src > docs/$filename
+done

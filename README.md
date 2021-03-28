@@ -80,7 +80,7 @@ Those who do not want to install the `Go` language can download ready-made binar
 
   * [lirisi.exe](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi.exe) for Windows amd64
   * [lirisi_mac](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi_mac) for Apple (Darwin) amd64
-  * [lirisi](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi.exe) for Linux amd64
+  * [lirisi](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi) for Linux amd64
 
 ## Description of using the application on the command line
 
@@ -918,6 +918,11 @@ const main = async () => {
 main()
 ```
 
+### Code viewing
+
+Some "Literate programming" style source code is available at https://zbohm.github.io/lirisi/.
+A description of the implementation of the signature according to the scheme is in section
+[4 A LSAG Signature Scheme](https://zbohm.github.io/lirisi/signature_factory.html#section-25).
 
 ### License
 

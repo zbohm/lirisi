@@ -1,0 +1,849 @@
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>signature_factory.go</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" media="all" href="lirisi.css" />
+  <link rel="stylesheet" media="all" href="gocco.css" />
+</head>
+<body>
+<header>
+    <h1><a href="index.html">Linkable Ring Signature</a></h1>
+    <div>Linkable Spontaneous Anonymous Group Signature for Ad Hoc Groups.</div>
+</header>
+<nav>
+  <a href='key_image.html'>Key image</a>
+  <a href='oid.html'>Oid</a>
+  <a href='public_keys.html'>Public keys</a>
+  <a href='signature_factory.html'>Signature factory</a>
+  <a href='signature.html'>Signature</a>
+</nav>
+  <div id="container">
+    <div id="background"></div>
+    
+    <table cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th class="docs">
+            <h1>
+                signature_factory.go
+            </h1>
+          </th>
+          <th class="code">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+          
+          <tr id="section-1">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+                <h1>Ring signature factory.</h1>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span></span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-2">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+                <p>Note: To show as a literar code documentation compile this code by <a href="https://github.com/nikhilm/gocco">gocco</a>:</p>
+
+<pre><code>$ gocco ring/signature_factory.go
+$ firefox docs/signature_factory.html
+</code></pre>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kn">package</span> <span class="nx">ring</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&quot;bytes&quot;</span>
+	<span class="s">&quot;crypto/ecdsa&quot;</span>
+	<span class="s">&quot;crypto/elliptic&quot;</span>
+	<span class="s">&quot;crypto/rand&quot;</span>
+	<span class="s">&quot;hash&quot;</span>
+	<span class="s">&quot;math/big&quot;</span>
+	<span class="s">&quot;reflect&quot;</span>
+
+	<span class="s">&quot;github.com/ethereum/go-ethereum/crypto&quot;</span>
+	<span class="s">&quot;golang.org/x/crypto/sha3&quot;</span>
+<span class="p">)</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-3">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+                <p>FactoryContext holds curve object and hash function.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">type</span> <span class="nx">FactoryContext</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">Curve</span>  <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span>
+	<span class="nx">Hasher</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-4">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+                <p>Point on elliptic curve.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">type</span> <span class="nx">Point</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-5">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+                <p>Bytes returns bytess of Key image.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <span class="nx">PointData</span><span class="p">)</span> <span class="nx">Bytes</span><span class="p">()</span> <span class="p">[]</span><span class="kt">byte</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nb">append</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">X</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">Y</span><span class="o">...</span><span class="p">)</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-6">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+                <p>Bytes returns bytess of Point.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <span class="nx">Point</span><span class="p">)</span> <span class="nx">Bytes</span><span class="p">()</span> <span class="p">[]</span><span class="kt">byte</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="nb">append</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">x</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">(),</span> <span class="nx">p</span><span class="p">.</span><span class="nx">y</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()</span><span class="o">...</span><span class="p">)</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-7">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+                <p>MakeDigest makes hash digest from data.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">FactoryContext</span><span class="p">)</span> <span class="nx">MakeDigest</span><span class="p">(</span><span class="nx">data</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="p">[]</span><span class="kt">byte</span> <span class="p">{</span>
+	<span class="nx">h</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Hasher</span><span class="p">()</span>
+	<span class="k">if</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">h</span><span class="p">.</span><span class="nx">Write</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">h</span><span class="p">.</span><span class="nx">Sum</span><span class="p">(</span><span class="kc">nil</span><span class="p">)</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-8">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+                <p>PointScalarMult provide scalar multiplication over elliptic curve.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">FactoryContext</span><span class="p">)</span> <span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">p</span> <span class="nx">Point</span><span class="p">,</span> <span class="nx">n</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="nx">Point</span> <span class="p">{</span>
+	<span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span><span class="p">.</span><span class="nx">ScalarMult</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="nx">p</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="nx">n</span><span class="p">)</span>
+	<span class="k">return</span> <span class="nx">Point</span><span class="p">{</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">}</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-9">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+                <p>PointAdd provide add points over elliptic curve.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">FactoryContext</span><span class="p">)</span> <span class="nx">PointAdd</span><span class="p">(</span><span class="nx">p1</span><span class="p">,</span> <span class="nx">p2</span> <span class="nx">Point</span><span class="p">)</span> <span class="nx">Point</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="nx">p1</span><span class="p">.</span><span class="nx">x</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">p2</span>
+	<span class="p">}</span>
+	<span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span><span class="p">.</span><span class="nx">Add</span><span class="p">(</span><span class="nx">p1</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="nx">p1</span><span class="p">.</span><span class="nx">y</span><span class="p">,</span> <span class="nx">p2</span><span class="p">.</span><span class="nx">x</span><span class="p">,</span> <span class="nx">p2</span><span class="p">.</span><span class="nx">y</span><span class="p">)</span>
+	<span class="k">return</span> <span class="nx">Point</span><span class="p">{</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">FactoryContext</span><span class="p">)</span> <span class="nx">getSignatureDigest</span><span class="p">(</span>
+	<span class="nx">publicKeysDigest</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span>
+	<span class="nx">privateImage</span> <span class="nx">Point</span><span class="p">,</span>
+	<span class="nx">messageDigest</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span>
+	<span class="nx">gsiYici</span> <span class="nx">Point</span><span class="p">,</span>
+	<span class="nx">hsiYci</span> <span class="nx">Point</span><span class="p">,</span>
+<span class="p">)</span> <span class="p">[]</span><span class="kt">byte</span> <span class="p">{</span>
+	<span class="nx">buff</span> <span class="o">:=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">publicKeysDigest</span><span class="p">,</span> <span class="nx">privateImage</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()</span><span class="o">...</span><span class="p">)</span>
+	<span class="nx">buff</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">buff</span><span class="p">,</span> <span class="nx">gsiYici</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()</span><span class="o">...</span><span class="p">)</span>
+	<span class="nx">buff</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">buff</span><span class="p">,</span> <span class="nx">hsiYci</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()</span><span class="o">...</span><span class="p">)</span>
+	<span class="nx">buff</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">buff</span><span class="p">,</span> <span class="nx">messageDigest</span><span class="o">...</span><span class="p">)</span>
+	<span class="k">return</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">MakeDigest</span><span class="p">(</span><span class="nx">buff</span><span class="p">)</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-10">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+                <p>HashPublicKeysIntoPoint returns a point on the curve created from public keys in this way:</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">FactoryContext</span><span class="p">)</span> <span class="nx">HashPublicKeysIntoPoint</span><span class="p">(</span><span class="nx">publicKeyPoints</span> <span class="p">[]</span><span class="nx">Point</span><span class="p">,</span> <span class="nx">caseIdentifier</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="nx">Point</span> <span class="p">{</span>
+	<span class="nx">buff</span> <span class="o">:=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">PointsToBytes</span><span class="p">(</span><span class="nx">publicKeyPoints</span><span class="p">),</span> <span class="nx">caseIdentifier</span><span class="o">...</span><span class="p">)</span>
+	<span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">FindPointOnCurve</span><span class="p">(</span><span class="nx">BuffToInt</span><span class="p">(</span><span class="nx">fc</span><span class="p">.</span><span class="nx">MakeDigest</span><span class="p">(</span><span class="nx">buff</span><span class="p">)))</span>
+	<span class="k">return</span> <span class="nx">Point</span><span class="p">{</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">}</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-11">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+                <p>FindPointOnCurve finds point x,y on the curve.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">FactoryContext</span><span class="p">)</span> <span class="nx">FindPointOnCurve</span><span class="p">(</span><span class="nx">value</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">,</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span>
+	<span class="kd">var</span> <span class="nx">i</span> <span class="kt">int64</span>
+	<span class="kd">var</span> <span class="nx">curve</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span>
+
+	<span class="nx">curveType</span><span class="p">,</span> <span class="nx">isTwistedBrainpool</span> <span class="o">:=</span> <span class="nx">BrainpoolParentCurves</span><span class="p">[</span><span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span><span class="p">.</span><span class="nx">Params</span><span class="p">().</span><span class="nx">Name</span><span class="p">]</span>
+	<span class="k">if</span> <span class="nx">isTwistedBrainpool</span> <span class="p">{</span>
+		<span class="nx">curve</span> <span class="p">=</span> <span class="nx">curveType</span><span class="p">()</span>
+	<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+		<span class="nx">curve</span> <span class="p">=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span>
+	<span class="p">}</span>
+	<span class="nx">params</span> <span class="o">:=</span> <span class="nx">curve</span><span class="p">.</span><span class="nx">Params</span><span class="p">()</span>
+
+	<span class="nx">x</span> <span class="p">=</span> <span class="nx">value</span><span class="p">.</span><span class="nx">ModSqrt</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">params</span><span class="p">.</span><span class="nx">P</span><span class="p">)</span>
+
+	<span class="k">for</span> <span class="nx">i</span> <span class="p">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="mh">0x2a</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">x</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="nx">y</span> <span class="p">=</span> <span class="nx">CurvePolynomial</span><span class="p">(</span><span class="nx">params</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span>
+			<span class="k">if</span> <span class="nx">y</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+				<span class="nx">y</span> <span class="p">=</span> <span class="nx">y</span><span class="p">.</span><span class="nx">ModSqrt</span><span class="p">(</span><span class="nx">y</span><span class="p">,</span> <span class="nx">params</span><span class="p">.</span><span class="nx">P</span><span class="p">)</span>
+			<span class="p">}</span>
+			<span class="k">if</span> <span class="nx">y</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="nx">curve</span><span class="p">.</span><span class="nx">IsOnCurve</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+					<span class="k">if</span> <span class="nx">isTwistedBrainpool</span> <span class="p">{</span>
+						<span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="p">=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">fromTwisted</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span>
+					<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-12">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+                <p>log.Printf(&ldquo;Point for %#v found after %d steps.&rdquo;, fc.Curve.Params().Name, i)</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>					<span class="k">return</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span>
+				<span class="p">}</span>
+			<span class="p">}</span>
+		<span class="p">}</span>
+		<span class="nx">x</span> <span class="p">=</span> <span class="nx">value</span><span class="p">.</span><span class="nx">ModSqrt</span><span class="p">(</span><span class="nx">value</span><span class="p">.</span><span class="nx">Add</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">big</span><span class="p">.</span><span class="nx">NewInt</span><span class="p">(</span><span class="nx">i</span><span class="p">)),</span> <span class="nx">params</span><span class="p">.</span><span class="nx">P</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="kc">nil</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-13">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+                <p>CurvePolynomial returns y calculaged from x.
+For curves is:  (x³ - 3x + B) % P or (x³ - 3x) % P
+For Secp256k1 is: (x³ + B) % P</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">CurvePolynomial</span><span class="p">(</span><span class="nx">params</span> <span class="o">*</span><span class="nx">elliptic</span><span class="p">.</span><span class="nx">CurveParams</span><span class="p">,</span> <span class="nx">x</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">)</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span> <span class="p">{</span>
+	<span class="nx">x3</span> <span class="o">:=</span> <span class="nb">new</span><span class="p">(</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">).</span><span class="nx">Mul</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span>
+	<span class="nx">x3</span><span class="p">.</span><span class="nx">Mul</span><span class="p">(</span><span class="nx">x3</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span> <span class="c1">// x³</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-14">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+                <p>Curve Secp256k1 does not have defined name.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="k">if</span> <span class="nx">params</span><span class="p">.</span><span class="nx">Name</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span> <span class="p">{</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-15">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+                <p>Curve is not Secp256k1.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>		<span class="nx">threeX</span> <span class="o">:=</span> <span class="nb">new</span><span class="p">(</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">).</span><span class="nx">Lsh</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+		<span class="nx">threeX</span><span class="p">.</span><span class="nx">Add</span><span class="p">(</span><span class="nx">threeX</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span>
+		<span class="nx">x3</span><span class="p">.</span><span class="nx">Sub</span><span class="p">(</span><span class="nx">x3</span><span class="p">,</span> <span class="nx">threeX</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">params</span><span class="p">.</span><span class="nx">B</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">x3</span><span class="p">.</span><span class="nx">Add</span><span class="p">(</span><span class="nx">x3</span><span class="p">,</span> <span class="nx">params</span><span class="p">.</span><span class="nx">B</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="nx">x3</span><span class="p">.</span><span class="nx">Mod</span><span class="p">(</span><span class="nx">x3</span><span class="p">,</span> <span class="nx">params</span><span class="p">.</span><span class="nx">P</span><span class="p">)</span>
+	<span class="k">return</span> <span class="nx">x3</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-16">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+                <p>Brainpool type R must be untwisted.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="p">(</span><span class="nx">fc</span> <span class="nx">FactoryContext</span><span class="p">)</span> <span class="nx">fromTwisted</span><span class="p">(</span><span class="nx">tx</span><span class="p">,</span> <span class="nx">ty</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">,</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span> <span class="nx">big</span><span class="p">.</span><span class="nx">Int</span>
+
+	<span class="nx">params</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span><span class="p">.</span><span class="nx">Params</span><span class="p">()</span>
+	<span class="nx">zinv2</span><span class="p">,</span> <span class="nx">zinv3</span> <span class="o">:=</span> <span class="nx">GetZinv</span><span class="p">(</span><span class="nx">params</span><span class="p">.</span><span class="nx">Name</span><span class="p">)</span>
+	<span class="nx">x</span><span class="p">.</span><span class="nx">Mul</span><span class="p">(</span><span class="nx">tx</span><span class="p">,</span> <span class="nx">zinv2</span><span class="p">)</span>
+	<span class="nx">x</span><span class="p">.</span><span class="nx">Mod</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">x</span><span class="p">,</span> <span class="nx">params</span><span class="p">.</span><span class="nx">P</span><span class="p">)</span>
+	<span class="nx">y</span><span class="p">.</span><span class="nx">Mul</span><span class="p">(</span><span class="nx">ty</span><span class="p">,</span> <span class="nx">zinv3</span><span class="p">)</span>
+	<span class="nx">y</span><span class="p">.</span><span class="nx">Mod</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">y</span><span class="p">,</span> <span class="nx">params</span><span class="p">.</span><span class="nx">P</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="o">&amp;</span><span class="nx">x</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">y</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-17">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+                <p>getRandomBytes returns bytes of random big integer.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">getRandomBytes</span><span class="p">(</span><span class="nx">max</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">)</span> <span class="p">[]</span><span class="kt">byte</span> <span class="p">{</span>
+	<span class="nx">value</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">rand</span><span class="p">.</span><span class="nx">Int</span><span class="p">(</span><span class="nx">rand</span><span class="p">.</span><span class="nx">Reader</span><span class="p">,</span> <span class="nx">max</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">value</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-18">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+                <p>PointsToBytes converts Points to bytes.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">PointsToBytes</span><span class="p">(</span><span class="nx">points</span> <span class="p">[]</span><span class="nx">Point</span><span class="p">)</span> <span class="p">[]</span><span class="kt">byte</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">content</span> <span class="p">[]</span><span class="kt">byte</span>
+	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">point</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">points</span> <span class="p">{</span>
+		<span class="nx">content</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">content</span><span class="p">,</span> <span class="nx">point</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()</span><span class="o">...</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">content</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-19">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+                <p>ConvertPublicKeysToPoints converts public keys into Points.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">ConvertPublicKeysToPoints</span><span class="p">(</span><span class="nx">publicKeys</span> <span class="p">[]</span><span class="o">*</span><span class="nx">ecdsa</span><span class="p">.</span><span class="nx">PublicKey</span><span class="p">)</span> <span class="p">[]</span><span class="nx">Point</span> <span class="p">{</span>
+	<span class="nx">points</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="nx">Point</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">publicKeys</span><span class="p">))</span>
+	<span class="k">for</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">key</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">publicKeys</span> <span class="p">{</span>
+		<span class="nx">points</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="p">=</span> <span class="nx">Point</span><span class="p">{</span><span class="nx">key</span><span class="p">.</span><span class="nx">X</span><span class="p">,</span> <span class="nx">key</span><span class="p">.</span><span class="nx">Y</span><span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">points</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-20">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+                <p>BuffToInt creates big Int from buffer.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">BuffToInt</span><span class="p">(</span><span class="nx">buff</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="o">*</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span> <span class="p">{</span>
+	<span class="nx">bn</span> <span class="o">:=</span> <span class="nb">new</span><span class="p">(</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">)</span>
+	<span class="nx">bn</span><span class="p">.</span><span class="nx">SetBytes</span><span class="p">(</span><span class="nx">buff</span><span class="p">)</span>
+	<span class="k">return</span> <span class="nx">bn</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-21">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+                <p>CurveHashSupportedCombination returns true if the curve and hash combination are supported.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">CurveHashSupportedCombination</span><span class="p">(</span><span class="nx">curve</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">,</span> <span class="nx">hasher</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-22">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+                <p>ScalarBaseMult can&rsquo;t handle scalars &gt; 256 bits
+<a href="https://github.com/ethereum/go-ethereum/blob/v1.9.25/crypto/secp256k1/curve.go#L249">https://github.com/ethereum/go-ethereum/blob/v1.9.25/crypto/secp256k1/curve.go#L249</a></p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="k">if</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">curve</span><span class="p">)</span> <span class="o">==</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">crypto</span><span class="p">.</span><span class="nx">S256</span><span class="p">)</span> <span class="p">{</span>
+		<span class="nx">refHasher</span> <span class="o">:=</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">hasher</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nx">refHasher</span> <span class="o">==</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">sha3</span><span class="p">.</span><span class="nx">New224</span><span class="p">)</span> <span class="o">||</span> <span class="nx">refHasher</span> <span class="o">==</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">sha3</span><span class="p">.</span><span class="nx">New256</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="kc">true</span>
+		<span class="p">}</span>
+		<span class="k">return</span> <span class="kc">false</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="kc">true</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-23">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+                <p>MakeSignature creates ring signature.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">MakeSignature</span><span class="p">(</span>
+	<span class="nx">curve</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">,</span>
+	<span class="nx">hasher</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span><span class="p">,</span>
+	<span class="nx">privateKey</span> <span class="o">*</span><span class="nx">ecdsa</span><span class="p">.</span><span class="nx">PrivateKey</span><span class="p">,</span>
+	<span class="nx">publicKeys</span> <span class="p">[]</span><span class="o">*</span><span class="nx">ecdsa</span><span class="p">.</span><span class="nx">PublicKey</span><span class="p">,</span>
+	<span class="nx">privateKeyPosition</span> <span class="kt">int</span><span class="p">,</span>
+	<span class="nx">message</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span>
+	<span class="nx">caseIdentifier</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span>
+<span class="p">)</span> <span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="o">*</span><span class="nx">Signature</span><span class="p">)</span> <span class="p">{</span>
+
+	<span class="k">if</span> <span class="p">!</span><span class="nx">CurveHashSupportedCombination</span><span class="p">(</span><span class="nx">curve</span><span class="p">,</span> <span class="nx">hasher</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">UnsupportedCurveHashCombination</span><span class="p">,</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+
+	<span class="nx">n</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nx">publicKeys</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">n</span> <span class="p">&lt;</span> <span class="mi">2</span> <span class="p">{</span> <span class="c1">// less than two keys doesn&#39;t make sense</span>
+		<span class="k">return</span> <span class="nx">InsufficientNumberOfPublicKeys</span><span class="p">,</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+
+	<span class="k">if</span> <span class="nx">privateKeyPosition</span> <span class="o">&gt;=</span> <span class="nx">n</span> <span class="o">||</span> <span class="nx">privateKeyPosition</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">PrivateKeyPositionOutOfRange</span><span class="p">,</span> <span class="kc">nil</span>
+	<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-24">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+                <p>Check that key at position s is indeed the signer.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="k">if</span> <span class="nx">publicKeys</span><span class="p">[</span><span class="nx">privateKeyPosition</span><span class="p">].</span><span class="nx">X</span><span class="p">.</span><span class="nx">Cmp</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">.</span><span class="nx">X</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">||</span> <span class="nx">publicKeys</span><span class="p">[</span><span class="nx">privateKeyPosition</span><span class="p">].</span><span class="nx">Y</span><span class="p">.</span><span class="nx">Cmp</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">.</span><span class="nx">Y</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">PrivateKeyNotFitPublic</span><span class="p">,</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+
+	<span class="nx">curveOID</span><span class="p">,</span> <span class="nx">status1</span> <span class="o">:=</span> <span class="nx">GetCurveOID</span><span class="p">(</span><span class="nx">curve</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">status1</span> <span class="o">!=</span> <span class="nx">Success</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">status1</span><span class="p">,</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+	<span class="nx">hasherOID</span><span class="p">,</span> <span class="nx">status2</span> <span class="o">:=</span> <span class="nx">GetHasherOID</span><span class="p">(</span><span class="nx">hasher</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">status2</span> <span class="o">!=</span> <span class="nx">Success</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">status2</span><span class="p">,</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+
+	<span class="nx">fc</span> <span class="o">:=</span> <span class="nx">FactoryContext</span><span class="p">{</span><span class="nx">Curve</span><span class="p">:</span> <span class="nx">curve</span><span class="p">(),</span> <span class="nx">Hasher</span><span class="p">:</span> <span class="nx">hasher</span><span class="p">}</span>
+
+	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">pub</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">publicKeys</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">pub</span><span class="p">.</span><span class="nx">Curve</span> <span class="o">!=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">UnexpectedCurveType</span><span class="p">,</span> <span class="kc">nil</span>
+		<span class="p">}</span>
+	<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-25">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+                <h1>4 A LSAG Signature Scheme</h1>
+
+<p>Let <em>G</em> = ⧼g⧽ be a group of prime order <em>q</em> such that the underlying discrete
+logarithm problem is intractable. Let <em>H<sub>1</sub></em> : {0, 1}∗ → <em>Z<sub>q</sub></em> and
+<em>H<sub>2</sub></em> : {0, 1}∗ → <em>G</em> be some statistically independent cryptographic hash functions.
+For <em>i = 1, · · ·, n,</em> each user <em>i</em> has a distinct public key <em>y<sub>i</sub></em>
+and a private key <em>x<sub>i</sub></em> such that <em>y<sub>i</sub> = g<sup>x<sub>i</sub></sup></em>.
+Let <em>L = {y<sub>1</sub>, · · ·, y<sub>n</sub>}</em> be the list of <em>n</em> public keys.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="nx">H1</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">getSignatureDigest</span>
+	<span class="nx">H2</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">HashPublicKeysIntoPoint</span>
+
+	<span class="nx">params</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span><span class="p">.</span><span class="nx">Params</span><span class="p">()</span>
+	<span class="nx">q</span> <span class="o">:=</span> <span class="nx">params</span><span class="p">.</span><span class="nx">N</span>                    <span class="c1">// curve order</span>
+	<span class="nx">G</span> <span class="o">:=</span> <span class="nx">Point</span><span class="p">{</span><span class="nx">params</span><span class="p">.</span><span class="nx">Gx</span><span class="p">,</span> <span class="nx">params</span><span class="p">.</span><span class="nx">Gy</span><span class="p">}</span> <span class="c1">// curve generator</span>
+
+	<span class="nx">m</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">MakeDigest</span><span class="p">(</span><span class="nx">message</span><span class="p">)</span>
+	<span class="nx">xπ</span> <span class="o">:=</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">D</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()</span> <span class="c1">// secret multiplier</span>
+	<span class="nx">π</span> <span class="o">:=</span> <span class="nx">privateKeyPosition</span>
+	<span class="nx">L</span> <span class="o">:=</span> <span class="nx">ConvertPublicKeysToPoints</span><span class="p">(</span><span class="nx">publicKeys</span><span class="p">)</span>
+	<span class="nx">Lb</span> <span class="o">:=</span> <span class="nx">PointsToBytes</span><span class="p">(</span><span class="nx">L</span><span class="p">)</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-26">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+                <h2>4.1 Signature Generation</h2>
+
+<p>Given message <em>m</em> ∈ {0, 1}∗, list of public key <em>L = {y<sub>1</sub>, · · · , y<sub>n</sub>}</em>, private key
+x<sub>π</sub> corresponding to <em>y<sub>π</sub> 1 ≤ π ≤ n</em>, the following algorithm generates a LSAG
+signature.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="nx">c</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([][]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">n</span><span class="p">)</span>
+	<span class="nx">s</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([][]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">n</span><span class="p">)</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-27">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+                <h3>Step 1</h3>
+
+<p>Compute <em>h = H<sub>2</sub>(L)</em> and <em>ỹ = h<sup>x<sub>π</sub></sup></em>.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="nx">h</span> <span class="o">:=</span> <span class="nx">H2</span><span class="p">(</span><span class="nx">L</span><span class="p">,</span> <span class="nx">caseIdentifier</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">h</span><span class="p">.</span><span class="nx">x</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">PointWasNotFound</span><span class="p">,</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+	<span class="nx">y</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">h</span><span class="p">,</span> <span class="nx">xπ</span><span class="p">)</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-28">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+                <h3>Step 2</h3>
+
+<p>Pick <em>u ∈<sub>R</sub> Z<sub>q</sub></em>, and compute</p>
+
+<p><em>c<sub>π+1</sub> = H<sub>1</sub>(L, ỹ, m, g<sup>u</sup>, h<sup>u</sup>)</em>.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="nx">u</span> <span class="o">:=</span> <span class="nx">getRandomBytes</span><span class="p">(</span><span class="nx">q</span><span class="p">)</span>
+	<span class="nx">c</span><span class="p">[(</span><span class="nx">π</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="nx">n</span><span class="p">]</span> <span class="p">=</span> <span class="nx">H1</span><span class="p">(</span><span class="nx">Lb</span><span class="p">,</span> <span class="nx">y</span><span class="p">,</span> <span class="nx">m</span><span class="p">,</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">G</span><span class="p">,</span> <span class="nx">u</span><span class="p">),</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">h</span><span class="p">,</span> <span class="nx">u</span><span class="p">))</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-29">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+                <h3>Step 3</h3>
+
+<p>For <em>i</em> = π+1, · · · , <em>n</em>, 1, · · · , π−1, pick <em>s<sub>i</sub> ∈<sub>R</sub> Z<sub>q</sub></em> and compute</p>
+
+<p><em>c<sub>i+1</sub> = H<sub>1</sub>(L, ỹ, m, g<sup>s<sub>i</sub></sup> y<sub>i</sub><sup>c<sub>i</sub></sup>,
+h<sup>s<sub>i</sub></sup> ỹ<sup>c<sub>i</sub></sup>)</em>.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">Gs</span><span class="p">,</span> <span class="nx">Lc</span><span class="p">,</span> <span class="nx">hs</span><span class="p">,</span> <span class="nx">yc</span> <span class="nx">Point</span>
+
+	<span class="k">for</span> <span class="nx">p</span> <span class="o">:=</span> <span class="mi">1</span><span class="p">;</span> <span class="nx">p</span> <span class="p">&lt;</span> <span class="nx">n</span><span class="p">;</span> <span class="nx">p</span><span class="o">++</span> <span class="p">{</span>
+		<span class="nx">i</span> <span class="o">:=</span> <span class="p">(</span><span class="nx">π</span> <span class="o">+</span> <span class="nx">p</span><span class="p">)</span> <span class="o">%</span> <span class="nx">n</span>
+		<span class="nx">s</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="p">=</span> <span class="nx">getRandomBytes</span><span class="p">(</span><span class="nx">q</span><span class="p">)</span>
+		<span class="nx">Gs</span> <span class="p">=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">G</span><span class="p">,</span> <span class="nx">s</span><span class="p">[</span><span class="nx">i</span><span class="p">])</span>
+		<span class="nx">Lc</span> <span class="p">=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">L</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">c</span><span class="p">[</span><span class="nx">i</span><span class="p">])</span>
+		<span class="nx">hs</span> <span class="p">=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">h</span><span class="p">,</span> <span class="nx">s</span><span class="p">[</span><span class="nx">i</span><span class="p">])</span>
+		<span class="nx">yc</span> <span class="p">=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">y</span><span class="p">,</span> <span class="nx">c</span><span class="p">[</span><span class="nx">i</span><span class="p">])</span>
+		<span class="nx">c</span><span class="p">[(</span><span class="nx">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="nx">n</span><span class="p">]</span> <span class="p">=</span> <span class="nx">H1</span><span class="p">(</span><span class="nx">Lb</span><span class="p">,</span> <span class="nx">y</span><span class="p">,</span> <span class="nx">m</span><span class="p">,</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointAdd</span><span class="p">(</span><span class="nx">Gs</span><span class="p">,</span> <span class="nx">Lc</span><span class="p">),</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointAdd</span><span class="p">(</span><span class="nx">hs</span><span class="p">,</span> <span class="nx">yc</span><span class="p">))</span>
+	<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-30">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+                <h3>Step 4</h3>
+
+<p>Compute <em>s<sub>π</sub></em> = <em>u − x<sub>π</sub>c<sub>π</sub></em> mod <em>q</em>.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="nx">s</span><span class="p">[</span><span class="nx">π</span><span class="p">]</span> <span class="p">=</span> <span class="nb">new</span><span class="p">(</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">).</span><span class="nx">Mod</span><span class="p">(</span><span class="nb">new</span><span class="p">(</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">).</span><span class="nx">Sub</span><span class="p">(</span><span class="nx">BuffToInt</span><span class="p">(</span><span class="nx">u</span><span class="p">),</span> <span class="nb">new</span><span class="p">(</span><span class="nx">big</span><span class="p">.</span><span class="nx">Int</span><span class="p">).</span><span class="nx">Mul</span><span class="p">(</span><span class="nx">BuffToInt</span><span class="p">(</span><span class="nx">xπ</span><span class="p">),</span> <span class="nx">BuffToInt</span><span class="p">(</span><span class="nx">c</span><span class="p">[</span><span class="nx">π</span><span class="p">]))),</span> <span class="nx">q</span><span class="p">).</span><span class="nx">Bytes</span><span class="p">()</span>
+
+	<span class="nx">sign</span> <span class="o">:=</span> <span class="nx">Signature</span><span class="p">{</span>
+		<span class="nx">Name</span><span class="p">:</span>       <span class="nx">Origin</span> <span class="o">+</span> <span class="s">&quot; Signature&quot;</span><span class="p">,</span>
+		<span class="nx">Version</span><span class="p">:</span>    <span class="nx">SignatureVersion</span><span class="p">,</span>
+		<span class="nx">CurveOID</span><span class="p">:</span>   <span class="nx">curveOID</span><span class="p">,</span>
+		<span class="nx">HasherOID</span><span class="p">:</span>  <span class="nx">hasherOID</span><span class="p">,</span>
+		<span class="nx">KeyImage</span><span class="p">:</span>   <span class="nx">PointData</span><span class="p">{</span><span class="nx">X</span><span class="p">:</span> <span class="nx">y</span><span class="p">.</span><span class="nx">x</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">(),</span> <span class="nx">Y</span><span class="p">:</span> <span class="nx">y</span><span class="p">.</span><span class="nx">y</span><span class="p">.</span><span class="nx">Bytes</span><span class="p">()},</span>
+		<span class="nx">Checksum</span><span class="p">:</span>   <span class="nx">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+		<span class="nx">Signatures</span><span class="p">:</span> <span class="nx">s</span><span class="p">,</span>
+	<span class="p">}</span>
+
+	<span class="k">return</span> <span class="nx">Success</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">sign</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-31">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+                <p>Create makes ring signature.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">Create</span><span class="p">(</span>
+	<span class="nx">curve</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">,</span>
+	<span class="nx">hasher</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span><span class="p">,</span>
+	<span class="nx">privateKey</span> <span class="o">*</span><span class="nx">ecdsa</span><span class="p">.</span><span class="nx">PrivateKey</span><span class="p">,</span>
+	<span class="nx">publicKeys</span> <span class="p">[]</span><span class="o">*</span><span class="nx">ecdsa</span><span class="p">.</span><span class="nx">PublicKey</span><span class="p">,</span>
+	<span class="nx">message</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span>
+	<span class="nx">caseIdentifier</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span>
+<span class="p">)</span> <span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="o">*</span><span class="nx">Signature</span><span class="p">)</span> <span class="p">{</span>
+
+	<span class="kd">var</span> <span class="nx">privateKeyPosition</span> <span class="p">=</span> <span class="o">-</span><span class="mi">1</span>
+
+	<span class="k">for</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">pub</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">publicKeys</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">pub</span><span class="p">.</span><span class="nx">X</span><span class="p">.</span><span class="nx">Cmp</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">.</span><span class="nx">X</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">pub</span><span class="p">.</span><span class="nx">Y</span><span class="p">.</span><span class="nx">Cmp</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">.</span><span class="nx">Y</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+			<span class="nx">privateKeyPosition</span> <span class="p">=</span> <span class="nx">i</span>
+			<span class="k">break</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="nx">privateKeyPosition</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">PrivateKeyNotFoundAmongPublicKeys</span><span class="p">,</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">MakeSignature</span><span class="p">(</span><span class="nx">curve</span><span class="p">,</span> <span class="nx">hasher</span><span class="p">,</span> <span class="nx">privateKey</span><span class="p">,</span> <span class="nx">publicKeys</span><span class="p">,</span> <span class="nx">privateKeyPosition</span><span class="p">,</span> <span class="nx">message</span><span class="p">,</span> <span class="nx">caseIdentifier</span><span class="p">)</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-32">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+                <p>Verify verifies signature.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">Verify</span><span class="p">(</span><span class="nx">sign</span> <span class="o">*</span><span class="nx">Signature</span><span class="p">,</span> <span class="nx">publicKeys</span> <span class="p">[]</span><span class="o">*</span><span class="nx">ecdsa</span><span class="p">.</span><span class="nx">PublicKey</span><span class="p">,</span> <span class="nx">message</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">caseIdentifier</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="kt">int</span> <span class="p">{</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-33">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+                <h1>4.2 Signature Verification</h1>
+
+<p>A public verifier checks a signature <em>σ<sub>L</sub>(m) = (c<sub>1</sub>, s<sub>1</sub>, · · ·, s<sub>n</sub>,
+ỹ)</em> on a message <em>m</em>  and a list of public keys <em>L</em> as follows.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="kd">var</span> <span class="nx">z1</span><span class="p">,</span> <span class="nx">z2</span> <span class="nx">Point</span>
+
+	<span class="nx">n</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="nx">publicKeys</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">sign</span><span class="p">.</span><span class="nx">Signatures</span><span class="p">)</span> <span class="o">!=</span> <span class="nx">n</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">IncorrectNumberOfSignatures</span>
+	<span class="p">}</span>
+
+	<span class="nx">curve</span><span class="p">,</span> <span class="nx">success1</span> <span class="o">:=</span> <span class="nx">GetCurve</span><span class="p">(</span><span class="nx">sign</span><span class="p">.</span><span class="nx">CurveOID</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">success1</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">OIDCurveNotFound</span>
+	<span class="p">}</span>
+	<span class="nx">hasher</span><span class="p">,</span> <span class="nx">success2</span> <span class="o">:=</span> <span class="nx">GetHasher</span><span class="p">(</span><span class="nx">sign</span><span class="p">.</span><span class="nx">HasherOID</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">success2</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">OIDHasherNotFound</span>
+	<span class="p">}</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">CurveHashSupportedCombination</span><span class="p">(</span><span class="nx">curve</span><span class="p">,</span> <span class="nx">hasher</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">UnsupportedCurveHashCombination</span>
+	<span class="p">}</span>
+
+	<span class="nx">fc</span> <span class="o">:=</span> <span class="nx">FactoryContext</span><span class="p">{</span><span class="nx">Curve</span><span class="p">:</span> <span class="nx">curve</span><span class="p">(),</span> <span class="nx">Hasher</span><span class="p">:</span> <span class="nx">hasher</span><span class="p">}</span>
+
+	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">pub</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">publicKeys</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">pub</span><span class="p">.</span><span class="nx">Curve</span> <span class="o">!=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">UnexpectedCurveType</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+
+	<span class="nx">kx</span><span class="p">,</span> <span class="nx">ky</span> <span class="o">:=</span> <span class="nx">BuffToInt</span><span class="p">(</span><span class="nx">sign</span><span class="p">.</span><span class="nx">KeyImage</span><span class="p">.</span><span class="nx">X</span><span class="p">),</span> <span class="nx">BuffToInt</span><span class="p">(</span><span class="nx">sign</span><span class="p">.</span><span class="nx">KeyImage</span><span class="p">.</span><span class="nx">Y</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span><span class="p">.</span><span class="nx">IsOnCurve</span><span class="p">(</span><span class="nx">kx</span><span class="p">,</span> <span class="nx">ky</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">InvalidKeyImage</span>
+	<span class="p">}</span>
+
+	<span class="nx">y</span> <span class="o">:=</span> <span class="nx">Point</span><span class="p">{</span><span class="nx">kx</span><span class="p">,</span> <span class="nx">ky</span><span class="p">}</span>
+
+	<span class="nx">H1</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">getSignatureDigest</span>
+	<span class="nx">H2</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">HashPublicKeysIntoPoint</span>
+
+	<span class="nx">params</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">Curve</span><span class="p">.</span><span class="nx">Params</span><span class="p">()</span>
+	<span class="nx">G</span> <span class="o">:=</span> <span class="nx">Point</span><span class="p">{</span><span class="nx">params</span><span class="p">.</span><span class="nx">Gx</span><span class="p">,</span> <span class="nx">params</span><span class="p">.</span><span class="nx">Gy</span><span class="p">}</span>
+
+	<span class="nx">m</span> <span class="o">:=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">MakeDigest</span><span class="p">(</span><span class="nx">message</span><span class="p">)</span>
+	<span class="nx">L</span> <span class="o">:=</span> <span class="nx">ConvertPublicKeysToPoints</span><span class="p">(</span><span class="nx">publicKeys</span><span class="p">)</span>
+	<span class="nx">Lb</span> <span class="o">:=</span> <span class="nx">PointsToBytes</span><span class="p">(</span><span class="nx">L</span><span class="p">)</span>
+
+	<span class="nx">c</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([][]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">n</span><span class="p">)</span>
+	<span class="nx">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="nx">sign</span><span class="p">.</span><span class="nx">Checksum</span>
+	<span class="nx">s</span> <span class="o">:=</span> <span class="nx">sign</span><span class="p">.</span><span class="nx">Signatures</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-34">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+                <h3>Step 1</h3>
+
+<p>Compute <em>h = H<sub>2</sub>(L)</em> and for <em>i = 1, · · · , n,</em> compute
+z&rsquo;<sub>i</sub> = g<sup>s<sub>i</sub></sup> y<sub>i</sub><sup>c<sub>i</sub></sup>,<br>
+z<sub>i</sub>&rdquo; = h<sup>s<sub>i</sub></sup> ỹ<sup>c<sub>i</sub></sup>
+and then <em>c<sub>i+1</sub> = H<sub>1</sub>(L, ỹ, m, z<sub>i</sub>&rsquo;, z<sub>i</sub>&rdquo;)</em> if <em>i ≠ n</em>.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>	<span class="nx">h</span> <span class="o">:=</span> <span class="nx">H2</span><span class="p">(</span><span class="nx">L</span><span class="p">,</span> <span class="nx">caseIdentifier</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">h</span><span class="p">.</span><span class="nx">x</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">PointWasNotFound</span>
+	<span class="p">}</span>
+
+	<span class="k">for</span> <span class="nx">i</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nx">n</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span> <span class="p">{</span>
+		<span class="nx">z1</span> <span class="p">=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointAdd</span><span class="p">(</span><span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">G</span><span class="p">,</span> <span class="nx">s</span><span class="p">[</span><span class="nx">i</span><span class="p">]),</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">L</span><span class="p">[</span><span class="nx">i</span><span class="p">],</span> <span class="nx">c</span><span class="p">[</span><span class="nx">i</span><span class="p">]))</span>
+		<span class="nx">z2</span> <span class="p">=</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointAdd</span><span class="p">(</span><span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">h</span><span class="p">,</span> <span class="nx">s</span><span class="p">[</span><span class="nx">i</span><span class="p">]),</span> <span class="nx">fc</span><span class="p">.</span><span class="nx">PointScalarMult</span><span class="p">(</span><span class="nx">y</span><span class="p">,</span> <span class="nx">c</span><span class="p">[</span><span class="nx">i</span><span class="p">]))</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-35">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+                <h3>Step 2.</h3>
+
+<p>Check whether <em>c<sub>1</sub> = H<sub>1</sub>(L, ỹ, m, z<sub>n</sub>&rsquo;, z<sub>n</sub>&rdquo;)</em>.
+If yes, accept. Otherwise, reject.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre>		<span class="k">if</span> <span class="nx">i</span> <span class="p">&lt;</span> <span class="nx">n</span><span class="o">-</span><span class="mi">1</span> <span class="p">{</span>
+			<span class="nx">c</span><span class="p">[</span><span class="nx">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">=</span> <span class="nx">H1</span><span class="p">(</span><span class="nx">Lb</span><span class="p">,</span> <span class="nx">y</span><span class="p">,</span> <span class="nx">m</span><span class="p">,</span> <span class="nx">z1</span><span class="p">,</span> <span class="nx">z2</span><span class="p">)</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="nx">bytes</span><span class="p">.</span><span class="nx">Equal</span><span class="p">(</span><span class="nx">sign</span><span class="p">.</span><span class="nx">Checksum</span><span class="p">,</span> <span class="nx">H1</span><span class="p">(</span><span class="nx">Lb</span><span class="p">,</span> <span class="nx">y</span><span class="p">,</span> <span class="nx">m</span><span class="p">,</span> <span class="nx">z1</span><span class="p">,</span> <span class="nx">z2</span><span class="p">))</span> <span class="p">{</span>
+				<span class="k">return</span> <span class="nx">Success</span>
+			<span class="p">}</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">IncorrectChecksum</span>
+<span class="p">}</span>
+
+</pre></div>
+            </td>
+          </tr>
+          
+      </tbody>
+    </table>
+  </div>
+<footer>
+    <a href="https://github.com/zbohm/lirisi/">Lirisi</a>; Zdeněk Böhm.
+    <a href="https://en.wikipedia.org/wiki/Literate_programming">Literate programming</a>.
+</footer>
+</body>
+</html>

@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>oid.go</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" media="all" href="lirisi.css" />
+  <link rel="stylesheet" media="all" href="gocco.css" />
+</head>
+<body>
+<header>
+    <h1><a href="index.html">Linkable Ring Signature</a></h1>
+    <div>Linkable Spontaneous Anonymous Group Signature for Ad Hoc Groups.</div>
+</header>
+<nav>
+  <a href='key_image.html'>Key image</a>
+  <a href='oid.html'>Oid</a>
+  <a href='public_keys.html'>Public keys</a>
+  <a href='signature_factory.html'>Signature factory</a>
+  <a href='signature.html'>Signature</a>
+</nav>
+  <div id="container">
+    <div id="background"></div>
+    
+    <table cellpadding="0" cellspacing="0">
+      <thead>
+        <tr>
+          <th class="docs">
+            <h1>
+                oid.go
+            </h1>
+          </th>
+          <th class="code">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+          
+          <tr id="section-1">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+                
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span></span><span class="kn">package</span> <span class="nx">ring</span>
+
+<span class="kn">import</span> <span class="p">(</span>
+	<span class="s">&quot;crypto/elliptic&quot;</span>
+	<span class="s">&quot;encoding/asn1&quot;</span>
+	<span class="s">&quot;github.com/ethereum/go-ethereum/crypto&quot;</span>
+	<span class="s">&quot;github.com/keybase/go-crypto/brainpool&quot;</span>
+	<span class="s">&quot;golang.org/x/crypto/sha3&quot;</span>
+	<span class="s">&quot;hash&quot;</span>
+	<span class="s">&quot;reflect&quot;</span>
+	<span class="s">&quot;strconv&quot;</span>
+	<span class="s">&quot;strings&quot;</span>
+<span class="p">)</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-2">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+                <p><a href="http://oidref.com/$OID">http://oidref.com/$OID</a></p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">var</span> <span class="nx">OIDHashers</span> <span class="p">=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span><span class="p">{</span>
+	<span class="s">&quot;2.16.840.1.101.3.4.2.7&quot;</span><span class="p">:</span>  <span class="nx">sha3</span><span class="p">.</span><span class="nx">New224</span><span class="p">,</span>
+	<span class="s">&quot;2.16.840.1.101.3.4.2.8&quot;</span><span class="p">:</span>  <span class="nx">sha3</span><span class="p">.</span><span class="nx">New256</span><span class="p">,</span>
+	<span class="s">&quot;2.16.840.1.101.3.4.2.9&quot;</span><span class="p">:</span>  <span class="nx">sha3</span><span class="p">.</span><span class="nx">New384</span><span class="p">,</span>
+	<span class="s">&quot;2.16.840.1.101.3.4.2.10&quot;</span><span class="p">:</span> <span class="nx">sha3</span><span class="p">.</span><span class="nx">New512</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="kd">var</span> <span class="nx">OIDCurves</span> <span class="p">=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">func</span><span class="p">()</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">{</span>
+	<span class="s">&quot;1.3.132.0.33&quot;</span><span class="p">:</span>          <span class="nx">elliptic</span><span class="p">.</span><span class="nx">P224</span><span class="p">,</span>    <span class="c1">// secp224r1 : NIST/SECG curve over a 224 bit prime field</span>
+	<span class="s">&quot;1.2.840.10045.3.1.7&quot;</span><span class="p">:</span>   <span class="nx">elliptic</span><span class="p">.</span><span class="nx">P256</span><span class="p">,</span>    <span class="c1">// prime256v1 (secp256r1): X9.62/SECG curve over a 256 bit prime field</span>
+	<span class="s">&quot;1.3.132.0.34&quot;</span><span class="p">:</span>          <span class="nx">elliptic</span><span class="p">.</span><span class="nx">P384</span><span class="p">,</span>    <span class="c1">// secp384r1 : NIST/SECG curve over a 384 bit prime field</span>
+	<span class="s">&quot;1.3.132.0.35&quot;</span><span class="p">:</span>          <span class="nx">elliptic</span><span class="p">.</span><span class="nx">P521</span><span class="p">,</span>    <span class="c1">// secp521r1 : NIST/SECG curve over a 521 bit prime field</span>
+	<span class="s">&quot;1.3.36.3.3.2.8.1.1.7&quot;</span><span class="p">:</span>  <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P256r1</span><span class="p">,</span> <span class="c1">// brainpoolP256r1: RFC 5639 curve over a 256 bit prime field</span>
+	<span class="s">&quot;1.3.36.3.3.2.8.1.1.8&quot;</span><span class="p">:</span>  <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P256t1</span><span class="p">,</span> <span class="c1">// brainpoolP256t1: RFC 5639 curve over a 256 bit prime field</span>
+	<span class="s">&quot;1.3.36.3.3.2.8.1.1.11&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P384r1</span><span class="p">,</span> <span class="c1">// brainpoolP384r1: RFC 5639 curve over a 384 bit prime field</span>
+	<span class="s">&quot;1.3.36.3.3.2.8.1.1.12&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P384t1</span><span class="p">,</span> <span class="c1">// brainpoolP384t1: RFC 5639 curve over a 384 bit prime field</span>
+	<span class="s">&quot;1.3.36.3.3.2.8.1.1.13&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P512r1</span><span class="p">,</span> <span class="c1">// brainpoolP512r1: RFC 5639 curve over a 512 bit prime field</span>
+	<span class="s">&quot;1.3.36.3.3.2.8.1.1.14&quot;</span><span class="p">:</span> <span class="nx">brainpool</span><span class="p">.</span><span class="nx">P512t1</span><span class="p">,</span> <span class="c1">// brainpoolP512t1: RFC 5639 curve over a 512 bit prime field</span>
+	<span class="s">&quot;1.3.132.0.10&quot;</span><span class="p">:</span>          <span class="nx">crypto</span><span class="p">.</span><span class="nx">S256</span><span class="p">,</span>      <span class="c1">// secp256k1 : SECG curve over a 256 bit prime field</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-3">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+                <p>GetHasher returns hash function and error.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">GetHasher</span><span class="p">(</span><span class="nx">oid</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">)</span> <span class="p">(</span><span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span><span class="p">,</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">fnc</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">OIDHashers</span><span class="p">[</span><span class="nx">oid</span><span class="p">.</span><span class="nx">String</span><span class="p">()]</span>
+	<span class="k">return</span> <span class="nx">fnc</span><span class="p">,</span> <span class="nx">ok</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-4">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+                <p>GetCurve returns hash function and error.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">GetCurve</span><span class="p">(</span><span class="nx">oid</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">)</span> <span class="p">(</span><span class="kd">func</span><span class="p">()</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">,</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">curve</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">OIDCurves</span><span class="p">[</span><span class="nx">oid</span><span class="p">.</span><span class="nx">String</span><span class="p">()]</span>
+	<span class="k">return</span> <span class="nx">curve</span><span class="p">,</span> <span class="nx">ok</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-5">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+                <p>CreateOID creates asn1.ObjectIdentifier</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">CreateOID</span><span class="p">(</span><span class="nx">s</span> <span class="kt">string</span><span class="p">)</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span> <span class="p">{</span>
+	<span class="nx">numbers</span> <span class="o">:=</span> <span class="nx">strings</span><span class="p">.</span><span class="nx">Split</span><span class="p">(</span><span class="nx">s</span><span class="p">,</span> <span class="s">&quot;.&quot;</span><span class="p">)</span>
+	<span class="nx">oid</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">numbers</span><span class="p">))</span>
+	<span class="k">for</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">s</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">numbers</span> <span class="p">{</span>
+		<span class="nx">n</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">strconv</span><span class="p">.</span><span class="nx">Atoi</span><span class="p">(</span><span class="nx">s</span><span class="p">)</span>
+		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="nb">panic</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+		<span class="p">}</span>
+		<span class="nx">oid</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="p">=</span> <span class="nx">n</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">oid</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-6">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+                <p>GetHasherOID return OID of hash function.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">GetHasherOID</span><span class="p">(</span><span class="nx">fnc</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">hash</span><span class="p">.</span><span class="nx">Hash</span><span class="p">)</span> <span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">,</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">refFnc</span> <span class="o">:=</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">fnc</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">value</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">OIDHashers</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="o">==</span> <span class="nx">refFnc</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">CreateOID</span><span class="p">(</span><span class="nx">key</span><span class="p">),</span> <span class="nx">Success</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">{},</span> <span class="nx">OIDHasherNotFound</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-7">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+                <p>GetCurveOID return OID of elliptic curve.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">GetCurveOID</span><span class="p">(</span><span class="nx">curve</span> <span class="kd">func</span><span class="p">()</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">)</span> <span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">,</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">refFnc</span> <span class="o">:=</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">curve</span><span class="p">)</span>
+	<span class="k">for</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">value</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">OIDCurves</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">reflect</span><span class="p">.</span><span class="nx">ValueOf</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="o">==</span> <span class="nx">refFnc</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">CreateOID</span><span class="p">(</span><span class="nx">key</span><span class="p">),</span> <span class="nx">Success</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">{},</span> <span class="nx">OIDCurveNotFound</span>
+<span class="p">}</span></pre></div>
+            </td>
+          </tr>
+          
+          <tr id="section-8">
+            <td class="docs">
+              <div class="pilwrap">
+                  <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+                <p>GetCurveOIDForCurve return OID of elliptic curve instance.</p>
+
+            </td>
+            <td class="code">
+                <div class="highlight"><pre><span class="kd">func</span> <span class="nx">GetCurveOIDForCurve</span><span class="p">(</span><span class="nx">curve</span> <span class="nx">elliptic</span><span class="p">.</span><span class="nx">Curve</span><span class="p">)</span> <span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">,</span> <span class="kt">int</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">for</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">fncCurve</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">OIDCurves</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">fncCurve</span><span class="p">()</span> <span class="o">==</span> <span class="nx">curve</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">CreateOID</span><span class="p">(</span><span class="nx">key</span><span class="p">),</span> <span class="nx">Success</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">ObjectIdentifier</span><span class="p">{},</span> <span class="nx">OIDCurveNotFound</span>
+<span class="p">}</span>
+
+</pre></div>
+            </td>
+          </tr>
+          
+      </tbody>
+    </table>
+  </div>
+<footer>
+    <a href="https://github.com/zbohm/lirisi/">Lirisi</a>; Zdeněk Böhm.
+    <a href="https://en.wikipedia.org/wiki/Literate_programming">Literate programming</a>.
+</footer>
+</body>
+</html>
