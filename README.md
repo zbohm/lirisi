@@ -14,7 +14,7 @@ written by Joseph K. Liu, Victor K. Wei and Duncan S. Wong in 2004.
 The scheme defines the procedure for creating and verifying an electronic signature that meets three basic requirements: anonymity, linkability and spontaneity.
 **Anonymity** means that it is not possible to find out from the signature who specifically created it from the group of signatories.
 **Linkability** means that it is possible to read from the signature whether another signature signed by the same signatory already exists, even though the signatory himself is not disclosed by it.
-**Spontaneity** means that no one in the group of signatories is superior in the signature. Unlike a group signature, where there is a "group manager" who knows the identity of the signatories, in a circular signature, everyone is equal.
+**Spontaneity** means that no one in the group of signatories is superior in the signature. Unlike a group signature, where there is a "group manager" who knows the identity of the signatories, in a ring signature, everyone is equal.
 
 These features allow you to use a signature wherever it is desired to maintain the anonymity of the signers. For example, in electronic elections. The voter signs the selected candidate without revealing his / her identity. The voter can use only one signature, because they have a unique identifier and so any duplicates can be traced.
 
@@ -454,9 +454,9 @@ In the file `sorted-hashes.txt` we have a list from which we get a fingerprint, 
 $ summary=`openssl dgst -sha3-256 sorted-hashes.txt | awk '{print $2}'`
 ```
 
-We will use the value `summary` as" salt ". We'll associate it with the imprint of each key. From this combined value, we will create a new fingerprint. The keys are then sorted according to this new fingerprint.
+We will use the value `summary` as "salt". We'll associate it with the imprint of each key. From this combined value, we will create a new fingerprint. The keys are then sorted according to this new fingerprint.
 
-Creating new fingerprints with `summary` as" salt ":
+Creating new fingerprints with `summary` as "salt":
 
 ```
 $ while read code
@@ -466,7 +466,7 @@ do
 done < public-keys-hashes.txt > digests.txt
 ```
 
-Sort keys by new fingerprints and calculate the final fingerprint for compound keys:
+Sort keys by new fingerprints and calculate the final fingerprint for folded keys:
 
 ```
 $ LC_ALL=C sort digests.txt | awk '{print $2}' | openssl dgst -sha3-256 -c | awk '{print $2}'
