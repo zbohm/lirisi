@@ -4,9 +4,10 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
-from lirisi import (CreateSignature, FoldPublicKeys, LirisiException,
-                    PublicKeysDigest, PublicKeyXYCoordinates,
-                    SignatureKeyImage, UnfoldPublicKeys, VerifySignature)
+from lirisi import (CreateSignature, DerivePublicKey, FoldPublicKeys,
+                    GeneratePrivateKey, LirisiException, PublicKeysDigest,
+                    PublicKeyXYCoordinates, SignatureKeyImage,
+                    UnfoldPublicKeys, VerifySignature)
 
 
 def createPublicKeyList(backend: Callable, curve: ec.EllipticCurve, size: int) -> List[bytes]:
@@ -25,6 +26,14 @@ def main():
 
     # Choose curve type.
     curve = ec.SECP256R1()
+
+    # Create private key.
+    priateKeyPem = GeneratePrivateKey()
+    print(priateKeyPem.decode())
+
+    # Create public key.
+    publicKeyPem = DerivePublicKey(priateKeyPem)
+    print(publicKeyPem.decode())
 
     # Creating public keys as a simulation of keys supplied by other signers.
     public_keys_pem = createPublicKeyList(backend, curve, 9)

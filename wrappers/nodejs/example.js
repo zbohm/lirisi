@@ -1,7 +1,16 @@
 var Eckles = require('eckles')
 const lirisi = require('lirisi')
 
+
 const main = async () => {
+    // Create private key.
+    const privatePem = lirisi.GeneratePrivateKey()
+    console.log("Curve type prime256v1:\n", lirisi.ArrayToString(privatePem))
+
+    // Create public key.
+    const publicPem = lirisi.DerivePublicKey(privatePem)
+    console.log(lirisi.ArrayToString(publicPem))
+
     // Creating public keys as a simulation of keys supplied by other signers.
     const publicKeysPEM = []
     for (let i = 0; i < 9; i++) {
@@ -13,7 +22,7 @@ const main = async () => {
     const pair = await Eckles.generate({format: 'pem'})
     const privateKeyPEM = pair.private
     const publicKeyPEM = pair.public
-    console.log(privateKeyPEM, "\n")
+    console.log("Eckles.generate:\n", privateKeyPEM, "\n")
 
     const coordinates = lirisi.PublicKeyXYCoordinates(publicKeyPEM)
     console.log("Puplic key coordinates:\n", Buffer.from(coordinates).toString('hex'), "\n")
@@ -49,4 +58,6 @@ const main = async () => {
     }
 }
 
-main()
+main().catch((e) => {
+    console.error(e)
+})

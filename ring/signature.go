@@ -113,6 +113,8 @@ const (
 	Asn1UnmarshalFailed               = 21
 	MarshalPKIXPublicKeyFailed        = 22
 	ParsePKIXPublicKeyFailed          = 23
+	CreateKeyFailed                   = 24
+	MarshalKeyFailed                  = 25
 )
 
 // ErrorMessages convert status codes to human readable error messages.
@@ -140,6 +142,8 @@ var ErrorMessages = map[int]string{
 	Asn1UnmarshalFailed:               "ASN1 Unmarshal Failed.",
 	MarshalPKIXPublicKeyFailed:        "Marshal PKIX public key falied.",
 	ParsePKIXPublicKeyFailed:          "Parse PKIX public key falied.",
+	CreateKeyFailed:                   "Create key failed.",
+	MarshalKeyFailed:                  "Marshal key failed.",
 }
 
 // GetCurveName returns curve name of the curve instace.

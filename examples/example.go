@@ -35,6 +35,21 @@ func createPublicKeyList(curve elliptic.Curve, size int) []*ecdsa.PublicKey {
 	return publicKeys
 }
 
+func createPrivateAndPublicKeyExample() {
+	// Create private key
+	status, privateKey := client.GeneratePrivateKey("prime256v1", "PEM")
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	fmt.Printf("%s", privateKey)
+	// Create public key.
+	status, publicKey := client.DerivePublicKey(privateKey, "PEM")
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	fmt.Printf("%s", publicKey)
+}
+
 func baseExample(
 	curveType func() elliptic.Curve,
 	hashFnc func() hash.Hash,
@@ -134,6 +149,8 @@ func main() {
 	if !ok {
 		log.Fatal(ring.UnexpectedHashType)
 	}
+
+	createPrivateAndPublicKeyExample()
 
 	// Creating public keys as a simulation of keys supplied by other signers.
 	publicKeys := createPublicKeyList(curveType(), 9)

@@ -17,6 +17,42 @@ from .utils import (goBytes, goBytesArray, goString, goStringsArray, toBytes,
 
 # API - Main Library functions.
 
+
+def GeneratePrivateKey(curveName: str = "prime256v1", outFormat: str = "PEM") -> bytes:
+    """## GeneratePrivateKey
+
+    Generate private key in PEM or DER.
+
+    ```python
+    from lirisi import GeneratePrivateKey
+
+    priateKeyPem = GeneratePrivateKey()
+    print(priateKeyPem.decode())
+    ```
+    """
+    lib.GeneratePrivateKey.argtypes = [GoString, GoString]
+    lib.GeneratePrivateKey.restype = BuffBytes
+    return toBytes(lib.GeneratePrivateKey(goString(curveName), goString(outFormat)))
+
+
+def DerivePublicKey(privateKey: bytes, outFormat: str = "PEM") -> bytes:
+    """## DerivePublicKey
+
+    Derive public key from private key.
+
+    ```python
+    from lirisi import GeneratePrivateKey, DerivePublicKey
+
+    priateKeyPem = GeneratePrivateKey()
+    publicKeyPem = DerivePublicKey(priateKeyPem)
+    print(publicKeyPem.decode())
+    ```
+    """
+    lib.DerivePublicKey.argtypes = [GoBytes, GoString]
+    lib.DerivePublicKey.restype = BuffBytes
+    return toBytes(lib.DerivePublicKey(goBytes(privateKey), goString(outFormat)))
+
+
 def SignatureKeyImage(signature_body: bytes, separator: bool = False) -> str:
     """## SignatureKeyImage
 

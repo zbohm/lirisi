@@ -94,6 +94,8 @@ Version: 0.0.0 (pre-release)
 
 Commands:
 
+  genkey      - Generate EC private key.
+  pubout      - Derive public key from private key.
   fold-pub    - Fold public keys into one file.
   sign        - Sign a message or file.
   verify      - Verify signature.
@@ -116,18 +118,30 @@ The signatory group first agrees on the type of elliptical curve to use. For exa
 
 ### Private and public key + public keys of others
 
-First, each participant creates their own private and public key pair. This can be done, for example, through the [openssl](https://www.openssl.org/) application.
+First, each participant creates their own private and public key pair. The `lirisi` application uses the` genkey` and `pubout` commands for this purpose. But you can use for example [openssl](https://www.openssl.org/) application. Creating keys via `lirisi` is compatible with` openssl`.
 
 Creating a private key:
 
 ```
-$ openssl ecparam -name prime256v1 -genkey -noout -out my-private-key.pem
+$ lirisi genkey -out my-private-key.pem
+```
+
+or alternatively
+
+```
+$ openssl ecparam -genkey -name prime256v1 -noout -out my-private-key.pem
 ```
 
 Creating a public key:
 
 ```
-$ openssl ec -in my-private-key.pem -pubout -out my-public-key.pem
+$ lirisi pubout -in my-private-key.pem -out my-public-key.pem
+```
+
+or alternatively
+
+```
+$ openssl ec -pubout -in my-private-key.pem -out my-public-key.pem
 ```
 
 For a ring signature, it is necessary to have the public keys of all other participants in the signature. After each participant creates their own key pair, the public participant sends it to everyone else or uploads it to some common repository from which the others download it. In the example, we will simulate the download of public keys to the `public-keys` folder.
@@ -138,9 +152,13 @@ Create public keys into the folder `public-keys` as if they were downloaded from
 $ mkdir public-keys
 $ for name in Alice Bob Carol Dave Eve Frank George Helen Iva
 do
-  openssl ecparam -name prime256v1 -genkey -noout | openssl ec -in - -pubout -out public-keys/$name.pem
+  lirisi genkey | lirisi pubout -in - -out /tmp/public-keys/$name.pem
+  
 done
 ```
+
+(or alternatively `openssl ecparam -name prime256v1 -genkey -noout | openssl ec -in - -pubout -out public-keys/$name.pem`)
+
 We will also add our own to public keys:
 
 ```
@@ -284,7 +302,7 @@ Verification Failure
 
 ### PEM and DER input / output formats
 
-The default format for the key file and signature is [PEM](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail). It is a text format, suitable for saving to a database, for example. In addition, the [DER](https://en.wikipedia.org/wiki/X.690#DER_encoding) binary file can be used. You set the format with the `-outform` parameter, for example: `-outform DER`. The private and public keys generated via `openssl` can also be stored in the `DER` format. The application recognizes it and can load it.
+The default format for the key file and signature is [PEM](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail). It is a text format, suitable for saving to a database, for example. In addition, the [DER](https://en.wikipedia.org/wiki/X.690#DER_encoding) binary file can be used. You set the format with the `-format` parameter, for example: `-format DER`. The private and public keys generated via `openssl` can also be stored in the `DER` format. The application recognizes it and can load it.
 
 ### KeyImage value to determine the duplicity of the signer
 
@@ -537,6 +555,7 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
+	"hash"
 	"log"
 
 	"github.com/zbohm/lirisi/client"
@@ -564,6 +583,109 @@ func createPublicKeyList(curve elliptic.Curve, size int) []*ecdsa.PublicKey {
 	return publicKeys
 }
 
+func createPrivateAndPublicKeyExample() {
+	// Create private key
+	status, privateKey := client.GeneratePrivateKey("prime256v1", "PEM")
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	fmt.Printf("%s", privateKey)
+	// Create public key.
+	status, publicKey := client.DerivePublicKey(privateKey, "PEM")
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	fmt.Printf("%s", publicKey)
+}
+
+func baseExample(
+	curveType func() elliptic.Curve,
+	hashFnc func() hash.Hash,
+	privateKey *ecdsa.PrivateKey,
+	publicKeys []*ecdsa.PublicKey,
+	message, caseIdentifier []byte,
+) ([]byte, []byte) {
+	// Make signature.
+	status, signature := ring.Create(curveType, hashFnc, privateKey, publicKeys, message, caseIdentifier)
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+
+	// Verify signature.
+	status = ring.Verify(signature, publicKeys, message, caseIdentifier)
+	if status == ring.Success {
+		fmt.Println("Signature verified OK")
+	} else {
+		fmt.Println("Signature verification Failure")
+	}
+
+	// Encode signature to format DER.
+	status, signatureDer := client.EncodeSignarureToDER(signature)
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	fmt.Printf("Signature in DER:\n%s\n", hex.Dump(signatureDer))
+
+	// Encode signature to format PEM.
+	status, signaturePem := client.EncodeSignarureToPEM(signature)
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	fmt.Printf("Signature in PEM:\n%s\n", signaturePem)
+	return signatureDer, signaturePem
+}
+
+func foldedKeysExample(privateKey *ecdsa.PrivateKey, foldedPublicKeys, signatureDer, signaturePem, message, caseIdentifier []byte) {
+	// Verify signature in DER.
+	status := client.VerifySignature(foldedPublicKeys, signatureDer, message, caseIdentifier)
+	if status == ring.Success {
+		fmt.Println("Signature in DER: Verified OK")
+	} else {
+		fmt.Println("Signature in DER: Verification Failure")
+	}
+	// Verify signature in PEM.
+	status = client.VerifySignature(foldedPublicKeys, signaturePem, message, caseIdentifier)
+	if status == ring.Success {
+		fmt.Println("Signature in PEM: Verified OK")
+	} else {
+		fmt.Println("Signature in PEM: Verification Failure")
+	}
+
+	// Encode private key to DER.
+	privateKeyDer, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Make first signature in format DER.
+	status, signatureDer = client.CreateSignature(foldedPublicKeys, privateKeyDer, message, caseIdentifier, "DER")
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	fmt.Printf("Signature in DER Nr.2:\n\n%s\n", hex.Dump(signatureDer))
+	// Verify signature in DER.
+	status = client.VerifySignature(foldedPublicKeys, signatureDer, message, caseIdentifier)
+	if status == ring.Success {
+		fmt.Println("Signature in DER Nr.2: Verified OK")
+	} else {
+		fmt.Println("Signature in DER Nr.2: Verification Failure")
+	}
+
+	// Make second signature in format PEM.
+	status, signaturePem = client.CreateSignature(foldedPublicKeys, privateKeyDer, message, caseIdentifier, "PEM")
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	fmt.Printf("Signature in PEM:\n\n%s\n", signaturePem)
+	// Verify signature in PEM.
+	status = client.VerifySignature(foldedPublicKeys, signaturePem, message, caseIdentifier)
+	if status == ring.Success {
+		fmt.Println("Signature in PEM Nr.2: Verified OK")
+	} else {
+		fmt.Println("Signature in PEM Nr.2: Verification Failure")
+	}
+	fmt.Println()
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
@@ -575,6 +697,8 @@ func main() {
 	if !ok {
 		log.Fatal(ring.UnexpectedHashType)
 	}
+
+	createPrivateAndPublicKeyExample()
 
 	// Creating public keys as a simulation of keys supplied by other signers.
 	publicKeys := createPublicKeyList(curveType(), 9)
@@ -597,33 +721,7 @@ func main() {
 	message := []byte("Hello world!")
 	caseIdentifier := []byte("Round Nr.1")
 
-	// Make signature.
-	status, signature := ring.Create(curveType, hashFnc, privateKey, publicKeys, message, caseIdentifier)
-	if status != ring.Success {
-		log.Fatal(ring.ErrorMessages[status])
-	}
-
-	// Verify signature.
-	status = ring.Verify(signature, publicKeys, message, caseIdentifier)
-	if status == ring.Success {
-		fmt.Println("Signature verified OK")
-	} else {
-		fmt.Println("Signature verification Failure")
-	}
-
-	// Encode signature to format DER.
-	status, signature_der := client.EncodeSignarureToDER(signature)
-	if status != ring.Success {
-		log.Fatal(ring.ErrorMessages[status])
-	}
-	fmt.Printf("Signature in DER:\n%s\n", hex.Dump(signature_der))
-
-	// Encode signature to format PEM.
-	status, signature_pem := client.EncodeSignarureToPEM(signature)
-	if status != ring.Success {
-		log.Fatal(ring.ErrorMessages[status])
-	}
-	fmt.Printf("Signature in PEM:\n%s\n", signature_pem)
+	signatureDer, signaturePem := baseExample(curveType, hashFnc, privateKey, publicKeys, message, caseIdentifier)
 
 	// Encode public keys to DER.
 	publicKeysDer := [][]byte{}
@@ -652,54 +750,7 @@ func main() {
 	}
 	fmt.Printf("Keys from DER:\n%s\n", foldedPublicKeysPEM)
 
-	// Verify signature in DER.
-	status = client.VerifySignature(foldedPublicKeys, signature_der, message, caseIdentifier)
-	if status == ring.Success {
-		fmt.Println("Signature in DER: Verified OK")
-	} else {
-		fmt.Println("Signature in DER: Verification Failure")
-	}
-	// Verify signature in PEM.
-	status = client.VerifySignature(foldedPublicKeys, signature_pem, message, caseIdentifier)
-	if status == ring.Success {
-		fmt.Println("Signature in PEM: Verified OK")
-	} else {
-		fmt.Println("Signature in PEM: Verification Failure")
-	}
-
-	// Encode private key to DER.
-	privateKeyDer, err := x509.MarshalECPrivateKey(privateKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Make first signature in format DER.
-	status, signature_der = client.CreateSignature(foldedPublicKeys, privateKeyDer, message, caseIdentifier, "DER")
-	if status != ring.Success {
-		log.Fatal(ring.ErrorMessages[status])
-	}
-	fmt.Printf("Signature in DER Nr.2:\n\n%s\n", hex.Dump(signature_der))
-	// Verify signature in DER.
-	status = client.VerifySignature(foldedPublicKeys, signature_der, message, caseIdentifier)
-	if status == ring.Success {
-		fmt.Println("Signature in DER Nr.2: Verified OK")
-	} else {
-		fmt.Println("Signature in DER Nr.2: Verification Failure")
-	}
-
-	// Make second signature in format PEM.
-	status, signature_pem = client.CreateSignature(foldedPublicKeys, privateKeyDer, message, caseIdentifier, "PEM")
-	if status != ring.Success {
-		log.Fatal(ring.ErrorMessages[status])
-	}
-	fmt.Printf("Signature in PEM:\n\n%s\n", signature_pem)
-	// Verify signature in PEM.
-	status = client.VerifySignature(foldedPublicKeys, signature_pem, message, caseIdentifier)
-	if status == ring.Success {
-		fmt.Println("Signature in PEM Nr.2: Verified OK")
-	} else {
-		fmt.Println("Signature in PEM Nr.2: Verification Failure")
-	}
-	fmt.Println()
+	foldedKeysExample(privateKey, foldedPublicKeys, signatureDer, signaturePem, message, caseIdentifier)
 
 	// Decompose folded public keys into files.
 	status, unfoldedPublicKeys := client.UnfoldPublicKeysIntoBytes(foldedPublicKeys, "PEM")
@@ -746,9 +797,10 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
-from lirisi import (CreateSignature, FoldPublicKeys, LirisiException,
-                    PublicKeysDigest, PublicKeyXYCoordinates,
-                    SignatureKeyImage, UnfoldPublicKeys, VerifySignature)
+from lirisi import (CreateSignature, DerivePublicKey, FoldPublicKeys,
+                    GeneratePrivateKey, LirisiException, PublicKeysDigest,
+                    PublicKeyXYCoordinates, SignatureKeyImage,
+                    UnfoldPublicKeys, VerifySignature)
 
 
 def createPublicKeyList(backend: Callable, curve: ec.EllipticCurve, size: int) -> List[bytes]:
@@ -767,6 +819,14 @@ def main():
 
     # Choose curve type.
     curve = ec.SECP256R1()
+
+    # Create private key.
+    priateKeyPem = GeneratePrivateKey()
+    print(priateKeyPem.decode())
+
+    # Create public key.
+    publicKeyPem = DerivePublicKey(priateKeyPem)
+    print(publicKeyPem.decode())
 
     # Creating public keys as a simulation of keys supplied by other signers.
     public_keys_pem = createPublicKeyList(backend, curve, 9)
@@ -867,7 +927,16 @@ $ node example.js
 var Eckles = require('eckles')
 const lirisi = require('lirisi')
 
+
 const main = async () => {
+    // Create private key.
+    const privatePem = lirisi.GeneratePrivateKey("prime256v1")
+    console.log("Curve type prime256v1:\n", lirisi.ArrayToString(privatePem))
+
+    // Create public key.
+    const publicPem = lirisi.DerivePublicKey(privatePem)
+    console.log(lirisi.ArrayToString(publicPem))
+
     // Creating public keys as a simulation of keys supplied by other signers.
     const publicKeysPEM = []
     for (let i = 0; i < 9; i++) {
@@ -879,7 +948,7 @@ const main = async () => {
     const pair = await Eckles.generate({format: 'pem'})
     const privateKeyPEM = pair.private
     const publicKeyPEM = pair.public
-    console.log(privateKeyPEM, "\n")
+    console.log("Eckles.generate:\n", privateKeyPEM, "\n")
 
     const coordinates = lirisi.PublicKeyXYCoordinates(publicKeyPEM)
     console.log("Puplic key coordinates:\n", Buffer.from(coordinates).toString('hex'), "\n")
@@ -915,7 +984,9 @@ const main = async () => {
     }
 }
 
-main()
+main().catch((e) => {
+    console.error(e)
+})
 ```
 
 ### Code viewing

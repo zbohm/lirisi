@@ -202,7 +202,9 @@ module.exports.VerifySignature = (
 module.exports.SignatureKeyImage = (signature, separator = false) => toString(lib.SignatureKeyImage(goBytes(signature), separator))
 module.exports.PublicKeysDigest = (foldedPublicKeys, separator = false) => toString(lib.PublicKeysDigest(goBytes(foldedPublicKeys), separator))
 module.exports.PublicKeyXYCoordinates = (publicKey) => toBytes(lib.PublicKeyXYCoordinates(goBytes(publicKey)))
-module.exports.UnfoldPublicKeys = (foldedPublicKeys, outFormat = 'PEM') => toBytesArray(lib.UnfoldPublicKeys(goBytes(foldedPublicKeys), goString(outFormat)))
+module.exports.UnfoldPublicKeys = (foldedPublicKeys, format = 'PEM') => toBytesArray(lib.UnfoldPublicKeys(goBytes(foldedPublicKeys), goString(format)))
+module.exports.GeneratePrivateKey = (curveName = 'prime256v1', format = 'PEM') => toBytes(lib.GeneratePrivateKey(goString(curveName), goString(format)))
+module.exports.DerivePublicKey = (privateKey, format = 'PEM') => toBytes(lib.DerivePublicKey(goBytes(privateKey), goString(format)))
 
 module.exports.ArrayToString = (array) => Buffer.from(array).toString()
 module.exports.ResultMessage = (code) => code === Success ? "Verified OK." : "Verification Failure: " + ErrorCode[code]
@@ -216,4 +218,6 @@ const lib = ffi.Library(path.join(__dirname, "lirisilib.so"), {
     PublicKeysDigest: [BuffBytes, [GoBytes, GoBoolean]],
     PublicKeyXYCoordinates: [BuffBytes, [GoBytes]],
     UnfoldPublicKeys: [BuffBytes, [GoBytes, GoString]],
+    GeneratePrivateKey: [BuffBytes, [GoString, GoString]],
+    DerivePublicKey: [BuffBytes, [GoBytes, GoString]],
 })

@@ -21,6 +21,8 @@ Version: 0.0.0 (pre-release)
 
 Commands:
 
+  genkey      - Generate EC private key.
+  pubout      - Derive public key from private key.
   fold-pub    - Fold public keys into one file.
   sign        - Sign a message or file.
   verify      - Verify signature.
@@ -47,7 +49,7 @@ Parameters:
   hash    - Name of hash function. Default is "sha3-256".
   inpath  - Folder with public keys. Only these keys must be in the folder. Nothing else.
   out     - The name of the output file.
-  outform - Format of output. Can be "PEM" or "DER". Default is "PEM".
+  format  - Format of output. Can be "PEM" or "DER". Default is "PEM".
   order   - Order of public keys. It can be by hashes or alphabetical. Default is "hashes". See README for more.
 
 Examples:
@@ -65,7 +67,7 @@ Parameters:
   inpub   - Filename of folded public keys. The file, that was created by the command "fold-pub".
   inkey   - Filename with your private key.
   out     - The name of the signature file.
-  outform - Format of output. Can be "PEM" or "DER". Default is "PEM".
+  format  - Format of output. Can be "PEM" or "DER". Default is "PEM".
 
 Examples:
 
@@ -132,12 +134,36 @@ Compare with: openssl ec -text -noout -in private-key.pem`)
 Parameters:
   in  - The name of the file with folded public keys.
   outpath - The name of the folder in which the public keys will be stored.
-  outform - Format of output. Can be "PEM" or "DER". Default is "PEM".
+  format  - Format of output. Can be "PEM" or "DER". Default is "PEM".
 
 Examples:
 
   lirisi restore-pub -in folded-public-keys.pem -outpath /tmp/
   lirisi restore-pub -in folded-public-keys.pem`)
+
+	case "genkey":
+		fmt.Println(`Command "genkey" generate EC private key.
+
+Parameters:
+  name   - Curve name. Default is prime256v1.
+  format - Format of output. Can be "PEM" or "DER". Default is "PEM".
+  out    - Filename of the output file. Optional. If not specified, the value is written to standard output.
+
+Examples:
+
+  lirisi genkey -out private-key.pem`)
+
+	case "pubout":
+		fmt.Println(`Command "pubout" derives public key from private key.
+
+Parameters:
+  in     - Private key.
+  format - Format of output. Can be "PEM" or "DER". Default is "PEM".
+  out    - Filename of the output file. Optional. If not specified, the value is written to standard output.
+
+Examples:
+
+  lirisi pubout -in private-key.pem -out public-key.pem`)
 
 	default:
 		fmt.Println("A command with this name was not found.")
@@ -298,6 +324,28 @@ func commandPublicKeyCoordinates(pubCoordinatesCmd *flag.FlagSet, pubCoordinates
 	client.WriteOutput(*pubDgstOutput, coordinates)
 }
 
+func commandGeneratePrivateKey(genPrivateKeyCmd *flag.FlagSet, curveName, format, output *string) {
+	if err := genPrivateKeyCmd.Parse(os.Args[2:]); err != nil {
+		log.Fatal(err)
+	}
+	status, key := client.GeneratePrivateKey(*curveName, *format)
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	client.WriteOutput(*output, key)
+}
+
+func commandDerivePublicKey(publicKeyCmd *flag.FlagSet, privateKey, format, output *string) {
+	if err := publicKeyCmd.Parse(os.Args[2:]); err != nil {
+		log.Fatal(err)
+	}
+	status, key := client.DerivePublicKey(client.ReadFromFileOrStdin(*privateKey), *format)
+	if status != ring.Success {
+		log.Fatal(ring.ErrorMessages[status])
+	}
+	client.WriteOutput(*output, key)
+}
+
 func commandHelp() {
 	if len(os.Args) < 3 {
 		fmt.Println("Enter a command name to display the command help.")
@@ -315,7 +363,7 @@ func main() {
 	signFoldedPubs := signCmd.String("inpub", "", "Public keys folded into the file.")
 	signPrivate := signCmd.String("inkey", "", "Filename to the private key.")
 	signOutput := signCmd.String("out", "", "Output to the file.")
-	signFormat := signCmd.String("outform", "PEM", "Format of output. Can be PEM, DER. Default is PEM.")
+	signFormat := signCmd.String("format", "PEM", "Format of output. Can be PEM, DER. Default is PEM.")
 
 	verifyCmd := flag.NewFlagSet("verify", flag.ExitOnError)
 	verifySignature := verifyCmd.String("in", "", "Signature filename.")
@@ -332,13 +380,13 @@ func main() {
 	pubSeqHash := pubSeqCmd.String("hash", "sha3-256", "Hash type.")
 	pubSeqPubDir := pubSeqCmd.String("inpath", "", "Folder with public keys.")
 	pubSeqOutput := pubSeqCmd.String("out", "", "Output to the file.")
-	pubSeqFormat := pubSeqCmd.String("outform", "PEM", "Format of output. Can be PEM, DER. Default is PEM.")
+	pubSeqFormat := pubSeqCmd.String("format", "PEM", "Format of output. Can be PEM, DER. Default is PEM.")
 	pubSeqOrder := pubSeqCmd.String("order", "hashes", "Public keys order. It can be hashes or alphabetical. Default is hashes.")
 
 	seqPubCmd := flag.NewFlagSet("restore-pub", flag.ExitOnError)
 	seqPubFile := seqPubCmd.String("in", "", "Public keys sequence filename.")
 	seqPubDir := seqPubCmd.String("outpath", "", "Path to save public keys.")
-	seqPubFormat := seqPubCmd.String("outform", "PEM", "Format of output. Can be PEM, DER. Default is PEM.")
+	seqPubFormat := seqPubCmd.String("format", "PEM", "Format of output. Can be PEM, DER. Default is PEM.")
 
 	pubDgstCmd := flag.NewFlagSet("pub-dgst", flag.ExitOnError)
 	pubDgstFile := pubDgstCmd.String("in", "", "Public keys sequence filename.")
@@ -347,6 +395,16 @@ func main() {
 
 	pubCoordinatesCmd := flag.NewFlagSet("pub-xy", flag.ExitOnError)
 	pubCoordinatesFile := pubCoordinatesCmd.String("in", "", "Public key filename.")
+
+	genPrivateKeyCmd := flag.NewFlagSet("genkey", flag.ExitOnError)
+	genPrivateKeyCurveName := genPrivateKeyCmd.String("name", "prime256v1", "Curve name. Default is prime256v1.")
+	genPrivateKeyFormat := genPrivateKeyCmd.String("format", "PEM", "Format of output. Can be PEM, DER. Default is PEM.")
+	genPrivateKeyOutput := genPrivateKeyCmd.String("out", "", "Output to the file.")
+
+	publicKeyCmd := flag.NewFlagSet("pubout", flag.ExitOnError)
+	publicKeyPrivate := publicKeyCmd.String("in", "", "Private key.")
+	publicKeyFormat := publicKeyCmd.String("format", "PEM", "Format of output. Can be PEM, DER. Default is PEM.")
+	publicKeyOutput := publicKeyCmd.String("out", "", "Output to the file.")
 
 	flag.Parse()
 
@@ -383,6 +441,12 @@ func main() {
 
 		case "restore-pub":
 			commandRestorePublicKeys(seqPubCmd, seqPubDir, seqPubFile, seqPubFormat)
+
+		case "genkey":
+			commandGeneratePrivateKey(genPrivateKeyCmd, genPrivateKeyCurveName, genPrivateKeyFormat, genPrivateKeyOutput)
+
+		case "pubout":
+			commandDerivePublicKey(publicKeyCmd, publicKeyPrivate, publicKeyFormat, publicKeyOutput)
 
 		default:
 			printHelp()

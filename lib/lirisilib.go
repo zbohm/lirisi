@@ -76,4 +76,16 @@ func PublicKeyXYCoordinates(pubicKey []byte) unsafe.Pointer {
 	return bytesToPointer(client.PublicKeyXYCoordinates(pubicKey))
 }
 
+// GeneratePrivateKey generates private key.
+//export GeneratePrivateKey
+func GeneratePrivateKey(curveName, format string) unsafe.Pointer {
+	return bytesToPointer(client.GeneratePrivateKey(curveName, format))
+}
+
+// DerivePublicKey derives public keys from private.
+//export DerivePublicKey
+func DerivePublicKey(privateKey []byte, format string) unsafe.Pointer {
+	return bytesToPointer(client.DerivePublicKey(privateKey, format))
+}
+
 func main() {}

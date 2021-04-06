@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+
+	"github.com/zbohm/lirisi/ring"
 )
 
 const ecPrivKeyVersion = 1
@@ -32,6 +34,31 @@ type ecPrivateKey struct {
 // This kind of key is commonly encoded in PEM blocks of type "EC PRIVATE KEY".
 func ParseECPrivateKey(der []byte) (*ecdsa.PrivateKey, error) {
 	return parseECPrivateKey(nil, der)
+}
+
+// MarshalECPrivateKey converts an EC private key to SEC 1, ASN.1 DER form.
+//
+// This kind of key is commonly encoded in PEM blocks of type "EC PRIVATE KEY".
+// For a more flexible key format which is not EC specific, use
+// MarshalPKCS8PrivateKey.
+func MarshalECPrivateKey(key *ecdsa.PrivateKey) ([]byte, error) {
+	oid, status := ring.GetCurveOIDForCurve(key.Curve)
+	if status != ring.Success {
+		return nil, errors.New("x509: unknown elliptic curve")
+	}
+	return marshalECPrivateKeyWithOID(key, oid)
+}
+
+// marshalECPrivateKey marshals an EC private key into ASN.1, DER format and
+// sets the curve ID to the given OID, or omits it if OID is nil.
+func marshalECPrivateKeyWithOID(key *ecdsa.PrivateKey, oid asn1.ObjectIdentifier) ([]byte, error) {
+	privateKey := make([]byte, (key.Curve.Params().N.BitLen()+7)/8)
+	return asn1.Marshal(ecPrivateKey{
+		Version:       1,
+		PrivateKey:    key.D.FillBytes(privateKey),
+		NamedCurveOID: oid,
+		PublicKey:     asn1.BitString{Bytes: elliptic.Marshal(key.Curve, key.X, key.Y)},
+	})
 }
 
 // parseECPrivateKey parses an ASN.1 Elliptic Curve Private Key Structure.

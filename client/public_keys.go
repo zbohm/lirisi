@@ -321,3 +321,25 @@ func buildDigest(hk []HashIdentKey) []byte {
 	}
 	return digests
 }
+
+// DerivePublicKey derives public key from private.
+func DerivePublicKey(encodedPrivateKey []byte, format string) (int, []byte) {
+	status, privateKey := ParsePrivateKey(encodedPrivateKey)
+	if status != ring.Success {
+		return status, []byte{}
+	}
+	publicKey := privateKey.Public().(*ecdsa.PublicKey)
+	content, err := x509ec.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		return ring.MarshalPKIXPublicKeyFailed, content
+	}
+	if format == "PEM" {
+		block := &pem.Block{Type: "PUBLIC KEY", Bytes: content}
+		buff := bytes.NewBuffer(make([]byte, 0))
+		if err := pem.Encode(buff, block); err != nil {
+			return ring.EncodePEMFailed, content
+		}
+		content = buff.Bytes()
+	}
+	return ring.Success, content
+}
