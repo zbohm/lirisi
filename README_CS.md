@@ -813,16 +813,16 @@ def createPublicKeyList(backend: Callable, curve: ec.EllipticCurve, size: int) -
 def main():
     backend = default_backend()
 
-    # Choose curve type.
-    curve = ec.SECP256R1()
-
-    # Create private key.
+    # Create private key. Default curve type is "prime256v1".
     priateKeyPem = GeneratePrivateKey()
     print(priateKeyPem.decode())
 
     # Create public key.
     publicKeyPem = DerivePublicKey(priateKeyPem)
     print(publicKeyPem.decode())
+
+    # Choose curve type.
+    curve = ec.SECP256R1()
 
     # Creating public keys as a simulation of keys supplied by other signers.
     public_keys_pem = createPublicKeyList(backend, curve, 9)
