@@ -1,0 +1,52 @@
+name: Run tests and build artifacts
+
+on:
+  push:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+
+  tests-and-build-artifacts:
+
+    strategy:
+      matrix:
+        go-version: [1.15.7]
+        os: [ubuntu, macos, windows]
+
+    runs-on: ${{ matrix.os }}-latest
+
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Build
+      if: matrix.os != 'windows'
+      run: go build -v -o lirisi-${{ matrix.os }}
+
+    - name: Build exe
+      if: matrix.os == 'windows'
+      run: go build -v -o lirisi.exe
+
+    - name: Archive binary
+      if: matrix.os != 'windows'
+      uses: actions/upload-artifact@v2
+      with:
+        name: lirisi-${{ matrix.os }}
+        path: lirisi-${{ matrix.os }}
+
+    - name: Archive binary exe
+      if: matrix.os == 'windows'
+      uses: actions/upload-artifact@v2
+      with:
+        name: lirisi-windows
+        path: lirisi.exe
