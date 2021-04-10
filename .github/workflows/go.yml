@@ -26,27 +26,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Test
+    - name: Run tests
       run: go test -v ./...
 
-    - name: Build
-      if: matrix.os != 'windows'
-      run: go build -v -o lirisi-${{ matrix.os }}
-
-    - name: Build exe
-      if: matrix.os == 'windows'
-      run: go build -v -o lirisi.exe
+    - name: Build binary
+      run: go build -v
 
     - name: Archive binary
-      if: matrix.os != 'windows'
       uses: actions/upload-artifact@v2
       with:
         name: lirisi-${{ matrix.os }}
-        path: lirisi-${{ matrix.os }}
-
-    - name: Archive binary exe
-      if: matrix.os == 'windows'
-      uses: actions/upload-artifact@v2
-      with:
-        name: lirisi-windows
-        path: lirisi.exe
+        path: lirisi*
