@@ -76,11 +76,7 @@ To install the project, you must first have the `Go` language installed on your 
 $ go get github.com/zbohm/lirisi
 ```
 
-Those who do not want to install the `Go` language can download ready-made binaries compiled for operating systems:
-
-  * [lirisi.exe](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi.exe) for Windows amd64
-  * [lirisi_mac](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi_mac) for Apple (Darwin) amd64
-  * [lirisi](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi) for Linux amd64
+Those who do not want to install the `Go` language and try the application right away can download ready-made binaries from [Nightly.link](https://nightly.link/zbohm/lirisi/workflows/go/master), compiled for the` Windows`, `MacOS` and` Ubuntu` operating systems.
 
 ## Description of using the application on the command line
 

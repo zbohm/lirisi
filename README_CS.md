@@ -72,11 +72,7 @@ Pro nainstalování projektu je potřeba nejprve mít v systému nainstalován j
 $ go get github.com/zbohm/lirisi
 ```
 
-Ti, kteří nechtějí instalovat jazyk `Go`, si mohou stáhnout připravené binárky, zkompilované pro operační systémy:
-
-  * [lirisi.exe](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi.exe) pro Windows amd64
-  * [lirisi_mac](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi_mac) pro Apple (Darwin) amd64
-  * [lirisi](https://github.com/zbohm/lirisi/raw/binaries/binaries/lirisi) pro Linux amd64
+Ti, kteří nechtějí instalovat jazyk `Go` a rovnou si aplikaci vyzkoušet, si mohou stáhnout z [Nightly.link](https://nightly.link/zbohm/lirisi/workflows/go/master) připravené binárky, zkompilované pro operační systémy `Windows`, `MacOS` a `Ubuntu`.
 
 
 ## Popis použití aplikace na příkazové řádce
