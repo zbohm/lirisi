@@ -16,8 +16,8 @@ import (
 )
 
 func printHelp() {
-	fmt.Println(`Lirisi is a command line tool for creating a "Linkable ring signature".
-Version: 0.0.0 (pre-release)
+	fmt.Printf(`Lirisi is a command line tool for creating a "Linkable ring signature".
+Version: %s
 
 Commands:
 
@@ -33,14 +33,22 @@ Commands:
   list-curves - List of available curve types.
   list-hashes - List of available hash functions.
   help        - This help or help for a specific command.
+  version	  - Output app version.
 
 Type "lirisi help COMMAND" for a specific command help. E.g. "lirisi help fold-pub".
 
-For more see https://github.com/zbohm/lirisi.`)
+For more see https://github.com/zbohm/lirisi.`, ring.LirisiVersion)
 }
 
 func printHelpCommand(commandName string) {
 	switch commandName {
+	case "version":
+		fmt.Println(`Command "version" outputs Lirisi version.
+
+Parameters:
+
+  out     - The name of the output file.`)
+
 	case "fold-pub":
 		fmt.Println(`Command "fold-pub" folds public keys into one file.
 
@@ -205,6 +213,13 @@ func helpListHashes() {
 	helpNote()
 }
 
+func commandVersion(versionCmd *flag.FlagSet, versionOutput *string) {
+	if err := versionCmd.Parse(os.Args[2:]); err != nil {
+		log.Fatal(err)
+	}
+	client.WriteOutput(*versionOutput, []byte(ring.LirisiVersion))
+}
+
 func commandMakeSignature(
 	signCmd *flag.FlagSet,
 	signFoldedPubs, signPrivate, signMessage, signCase, signFormat, signOutput *string,
@@ -357,6 +372,9 @@ func commandHelp() {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
+	versionCmd := flag.NewFlagSet("version", flag.ExitOnError)
+	versionOutput := versionCmd.String("out", "", "Output to the file.")
+
 	signCmd := flag.NewFlagSet("sign", flag.ExitOnError)
 	signMessage := signCmd.String("message", "", "A text message or the name of the file to be signed.")
 	signCase := signCmd.String("case", "", "Case identifier.")
@@ -420,6 +438,9 @@ func main() {
 
 		case "list-hashes":
 			helpListHashes()
+
+		case "version":
+			commandVersion(versionCmd, versionOutput)
 
 		case "sign":
 			commandMakeSignature(signCmd, signFoldedPubs, signPrivate, signMessage, signCase, signFormat, signOutput)

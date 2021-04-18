@@ -85,6 +85,9 @@ var HashCodes = map[string]func() hash.Hash{
 	"sha3-512": sha3.New512,
 }
 
+// Lirisi application version.
+const LirisiVersion = "0.0.1"
+
 // Status codes for sign/verify functions.
 const (
 	Origin                            = "github.com/zbohm/lirisi"
