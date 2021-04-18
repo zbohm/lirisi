@@ -179,24 +179,15 @@ Examples:
 	}
 }
 
-func helpNote() {
-	fmt.Println(`
-Caution! For curve secp256k1 can be used only sha3-224 and sha3-256.
-See README for examples.`)
-}
-
 func helpListCurves() {
 	curveCodes := make([]string, 0, len(ring.CurveCodes))
 	for k := range ring.CurveCodes {
 		curveCodes = append(curveCodes, k)
 	}
 	sort.Strings(curveCodes)
-	fmt.Println("Available curve types:")
-	fmt.Println()
 	for _, code := range curveCodes {
-		fmt.Printf("  %s\n", code)
+		fmt.Println(code)
 	}
-	helpNote()
 }
 
 func helpListHashes() {
@@ -205,12 +196,9 @@ func helpListHashes() {
 		hashCodes = append(hashCodes, k)
 	}
 	sort.Strings(hashCodes)
-	fmt.Println("Available hash functions:")
-	fmt.Println()
 	for _, code := range hashCodes {
-		fmt.Printf("  %s\n", code)
+		fmt.Println(code)
 	}
-	helpNote()
 }
 
 func commandVersion(versionCmd *flag.FlagSet, versionOutput *string) {
