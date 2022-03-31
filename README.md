@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/zbohm/lirisi.svg?branch=master)](https://travis-ci.org/zbohm/lirisi)
-[![Report Card](http://goreportcard.com/badge/zbohm/lirisi)](http://goreportcard.com/report/zbohm/lirisi)
+[![Go Report Card](https://goreportcard.com/badge/github.com/zbohm/lirisi)](https://goreportcard.com/report/github.com/zbohm/lirisi)
 [![GoDoc](https://godoc.org/github.com/zbohm/lirisi?status.svg)](https://godoc.org/github.com/zbohm/lirisi)
 
 
